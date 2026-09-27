@@ -1,0 +1,12 @@
+{
+  "name": "grand-disaster-3d",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/foundation.test.mjs tests/entrypoint.test.mjs",
+    "test:browser": "node tests/browser-vertical-slice.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}

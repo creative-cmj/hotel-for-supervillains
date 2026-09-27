@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#150f20"><title>Hotel for Supervillains · The Grand Disaster</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="3d/game.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#150f20"><title>The Grand Disaster · 3D First Shift</title><link rel="icon" href="../favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="game.css"></head>
 <body>
 <canvas id="world" aria-label="3D hotel game"></canvas>
 <div id="hud"><div class="hud-top"><span id="cash">$4,850</span><div class="status"><span id="reputation">REPUTATION <b>72</b></span><span id="mayhem">MAYHEM <b>12%</b></span></div></div><div class="objective"><div class="eyebrow">FIRST SHIFT · CURRENT OBJECTIVE</div><div id="objective">Answer the front desk phone</div><small id="hint">Use WASD to move · Mouse to look · Shift to run</small></div><div id="prompt" hidden></div><div id="toast" role="status" aria-live="polite"></div><button id="sound" title="Toggle sound" aria-label="Toggle sound">♪</button></div>
@@ -7,4 +7,4 @@
 <section id="dialogue" class="dialogue" hidden><div class="eyebrow">FRONT DESK LINE · ROOM 307</div><strong>DOCTOR DRIZZLE</strong><p>“Front desk! My weather machine is dying. Find an industrial battery in Storage, unless you'd like my room to develop its own tornado season.”</p><button id="close-dialogue">ON IT <span>→</span></button></section>
 <section id="computer" class="computer" hidden><div class="monitor"><header><span class="os-brand">◆ GRAND DISASTER <em>OS</em></span><span>MANAGER TERMINAL · SHIFT 1</span><button id="exit-os">EXIT <span>×</span></button></header><nav><button data-tab="home" class="active">HOME</button><button data-tab="guests">GUESTS</button><button data-tab="map">HOTEL MAP</button></nav><div id="os-view"></div><footer>THE GRAND DISASTER · TRUST NO ELEVATOR MUSIC</footer></div></section>
 <section id="pause" class="cover" hidden><div class="pause-card"><div class="eyebrow">MANAGER ON BREAK</div><h2>PAUSED</h2><button id="resume">RESUME SHIFT</button><button id="restart">RESTART TUTORIAL</button></div></section>
-<div id="debug" hidden></div><script type="module" src="3d/main.js"></script></body></html>
+<div id="debug" hidden></div><script type="module" src="main.js"></script></body></html>
