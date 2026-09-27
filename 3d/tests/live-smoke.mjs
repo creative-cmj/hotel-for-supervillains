@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+
+const site=process.env.HOTEL_URL ?? 'https://creative-cmj.github.io/hotel-for-supervillains/';
+const targets=await(await fetch('http://127.0.0.1:9231/json')).json();
+const target=targets.find(t=>t.type==='page');assert.ok(target,'Chrome CDP port 9231 must have a page');
+const socket=new WebSocket(target.webSocketDebuggerUrl);await new Promise((resolve,reject)=>{socket.addEventListener('open',resolve,{once:true});socket.addEventListener('error',reject,{once:true})});
+let next=1;const waiting=new Map();const errors=[];
+socket.addEventListener('message',({data})=>{const msg=JSON.parse(data);if(msg.method==='Runtime.exceptionThrown')errors.push(msg.params.exceptionDetails.exception?.description||msg.params.exceptionDetails.text);if(waiting.has(msg.id)){const {resolve,reject}=waiting.get(msg.id);waiting.delete(msg.id);msg.error?reject(Error(msg.error.message)):resolve(msg.result)}});
+const call=(method,params={})=>new Promise((resolve,reject)=>{const id=next++;waiting.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}))});
+const evaluate=async expression=>{const out=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description);return out.result.value};
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+await call('Runtime.enable');await call('Page.enable');await call('Page.navigate',{url:site+`?v=${Math.random().toString(36).slice(2)}`});await wait(1800);
+assert.equal(await evaluate("document.querySelector('script[type=module]')?.getAttribute('src')"),'3d/main.js');
+assert.equal(await evaluate("document.querySelector('#world')?.width>100"),true);
+assert.equal(await evaluate('window.__HOTEL_TEST__===undefined'),true);
+await evaluate("document.querySelector('#start').click()");await wait(500);
+assert.equal(await evaluate("document.querySelector('#intro').hidden"),true);
+assert.match(await evaluate("document.querySelector('#objective').textContent"),/Answer the front desk phone/);
+await call('Page.navigate',{url:site+'classic/'});await wait(800);
+assert.match(await evaluate('document.body.innerText'),/Keep the villains cozy/);
+assert.deepEqual(errors,[],'Deployed pages must not throw JavaScript exceptions');
+socket.close();console.log('LIVE smoke: PASS — 3D public root rendered, started, and classic opened without browser exceptions.');

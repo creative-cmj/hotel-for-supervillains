@@ -31,7 +31,7 @@ For the browser acceptance playthrough: serve the repository on port 4180, launc
 node 3d/tests/browser-vertical-slice.mjs
 ```
 
-The browser test uses real keyboard events for movement/interactions, developer teleports to shorten long walks, asserts movement/collision and the complete mission state, exercises all three OS views, verifies local persistence and both public entrypoints, and collects browser exceptions.
+The browser test uses real keyboard events to traverse the lobby, storage, lift, hallway, and Room 307; uses developer teleports only to shorten the return journey; asserts movement/collision and the complete mission state; exercises all three OS views, Esc, local persistence, and both entrypoints; and collects browser exceptions. After publication, run `npm run test:live --prefix 3d` with Chrome on CDP port 9231 to smoke-test the actual deployed root and classic paths.
 
 ## Scope
 
