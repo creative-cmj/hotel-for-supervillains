@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
+
+const endpoint = process.env.CDP_ENDPOINT ?? 'http://127.0.0.1:9231';
+const targets = await (await fetch(`${endpoint}/json`)).json();
+const target = targets.find((entry) => entry.type === 'page' && entry.url.includes('127.0.0.1:4180'));
+assert.ok(target, 'Chrome must have a local hotel tab');
+const socket = new WebSocket(target.webSocketDebuggerUrl);
+await new Promise((resolve, reject) => {
+  socket.addEventListener('open', resolve, { once: true });
+  socket.addEventListener('error', reject, { once: true });
+});
+let id = 1;
+const pending = new Map();
+socket.addEventListener('message', ({ data }) => {
+  const message = JSON.parse(data);
+  if (!pending.has(message.id)) return;
+  const entry = pending.get(message.id); pending.delete(message.id);
+  message.error ? entry.reject(Error(message.error.message)) : entry.resolve(message.result);
+});
+const call = (method, params = {}) => new Promise((resolve, reject) => {
+  const key = id++; pending.set(key, { resolve, reject }); socket.send(JSON.stringify({ id: key, method, params }));
+});
+const evaluate = async (expression) => {
+  const result = await call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+  if (result.exceptionDetails) throw Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
+  return result.result.value;
+};
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+await call('Runtime.enable');
+await call('Page.navigate', { url: 'http://127.0.0.1:4180/3d/editor.html' });
+for (let attempt = 0; attempt < 50 && !await evaluate('Boolean(window.__HOTEL_EDITOR_TEST__)'); attempt++) await delay(100);
+assert.ok(await evaluate('Boolean(window.__HOTEL_EDITOR_TEST__)'), 'Hotel Builder failed to boot');
+assert.ok((await evaluate('Object.keys(window.__HOTEL_EDITOR_TEST__.CATALOG).length')) >= 15);
+await evaluate("[...document.querySelectorAll('#presets button')].find(button=>button.textContent==='Standard Room A').click()");
+assert.equal(await evaluate('window.__HOTEL_EDITOR_TEST__.objectCount'), 11);
+await evaluate(`document.querySelector('[data-floor="2"]').click()`);
+assert.equal(await evaluate('window.__HOTEL_EDITOR_TEST__.floor'), 2);
+await evaluate("[...document.querySelectorAll('#palette button')].find(button=>button.textContent.includes('Villain Console')).click()");
+assert.equal(await evaluate('window.__HOTEL_EDITOR_TEST__.objectCount'), 12);
+await evaluate("document.querySelector('#object-x').value='3.5';document.querySelector('#object-x').dispatchEvent(new Event('input'))");
+const layout = JSON.parse(await evaluate('JSON.stringify(window.__HOTEL_EDITOR_TEST__.serializeLayout())'));
+assert.equal(layout.version, 1);
+assert.equal(layout.objects.at(-1).floor, 2);
+assert.equal(layout.objects.at(-1).position[0], 3.5);
+await evaluate(`document.querySelector('[data-floor="1"]').click()`);
+await delay(250);
+const image = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+await writeFile(new URL('../preview-editor.png', import.meta.url), Buffer.from(image.data, 'base64'));
+socket.close();
+console.log('Hotel Builder browser QA: PASS — presets, floors, selection fields, serialization, and render.');

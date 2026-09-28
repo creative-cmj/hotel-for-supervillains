@@ -78,13 +78,14 @@ export function createWorld() {
   const noopPart=()=>({rotation:{x:0}});
   const world={scene,objects,colliders,avatar,drizzle,battery,heldBattery,serviceParcel,heldParcel,roomDoor:null,doorCollider:null,
     machine:null,animated:[],armL:noopPart(),armR:noopPart(),legL:noopPart(),legR:noopPart(),
-    lift:null,liftDoors:[],spawn:LOBBY_SPAWN,hotel:null,guestDoors:[],roomOpen:false,doors:null,population:[],
+    lift:null,liftDoors:[],spawn:LOBBY_SPAWN,hotel:null,guestDoors:[],roomOpen:false,doors:null,population:[],editableLayout:[],
     openRoom307(){this.roomOpen=true;this.doors?.open(307,true);},
     setFloorVisibility(floor){
       const accent=floor===0?0xffd8ba:floor===2?0xff70c8:0x55d9ff;
       for(const light of floorLights){light.position.y=FLOOR_HEIGHTS[floor]+3.4;light.color.setHex(accent)}
       if(this.hotel)this.hotel.traverse(node=>{if(node.isMesh){const assigned=node.userData.hotelFloor;node.visible=assigned===undefined||assigned===floor}});
       for(const entry of this.population||[])entry.group.visible=entry.data.floor===floor;
+      for(const root of this.editableLayout||[])root.visible=root.userData.hotelFloor===floor;
     }
   };
   return world;

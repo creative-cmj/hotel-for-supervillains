@@ -12,6 +12,8 @@ python -m http.server 4180
 
 Open `http://127.0.0.1:4180/` in a desktop browser with WebGL support. The browser version is also published via GitHub Pages. The 3D runtime's Three.js dependency is vendored under `3d/vendor`, so playing does not require npm or an external CDN.
 
+To build rooms and hotel areas without Blender, open `http://127.0.0.1:4180/3d/editor.html`. The visual editor creates architecture and furniture from reusable game-ready pieces, saves browser drafts, and exports the `3d/data/custom-layout.json` file consumed by the game. See [NO_BLENDER_SETUP.md](NO_BLENDER_SETUP.md).
+
 - First-person view. WASD or arrow keys: move. Mouse: look. Shift: run.
 - E: interact. Q: drop a carried item. Esc: close a panel, close the computer, or pause.
 - Walk to the ringing front-desk phone, answer Drizzle's request, find and carry the industrial battery from Storage, enter the lift and select Floor 3, open Room 307, deliver the battery, ride back, and use the physical manager computer.

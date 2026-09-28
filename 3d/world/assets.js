@@ -2,6 +2,7 @@ import * as THREE from '../vendor/three.module.js';
 import { GLTFLoader } from '../vendor/addons/loaders/GLTFLoader.js';
 import { createDoorSystem, GUEST_ROOMS } from '../systems/doors.js';
 import { createPopulation } from './population.js';
+import { loadEditableLayout } from './editable-layout.js';
 
 const loader = new GLTFLoader();
 const ASSET_VERSION = 'polished-hotel-1';
@@ -123,6 +124,7 @@ export async function loadWorldAssets(world, onStatus) {
   register(world, 'drizzle', new THREE.Vector3(6.0, 9, -3.15), 1.9, 'drizzle', 'Give Battery to Doctor Drizzle', world.drizzle, { minFacing: -.1 });
 
   createPopulation(world);
+  await loadEditableLayout(world, onStatus);
   world.setFloorVisibility(0);
   onStatus?.('Hotel ready');
   return { hotel, manager, drizzle, phone, computer, weather, placement };

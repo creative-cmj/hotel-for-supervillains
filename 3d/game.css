@@ -4,6 +4,7 @@
 
 /* Polished hotel interaction layer */
 #loading-status{min-height:1.4em;margin-top:14px;color:#e9c98f;font-size:.78rem;letter-spacing:.08em}
+.builder-link{display:block;width:max-content;margin:12px auto 0;color:#8ce2ed;font-size:.7rem;font-weight:800;letter-spacing:.13em;text-decoration:none}.builder-link:hover{color:#fff1bd}
 #start:disabled{cursor:wait;filter:saturate(.35);opacity:.72;box-shadow:none}
 .objective{max-width:min(430px,calc(100vw - 60px));border-radius:0 12px 12px 0;padding:10px 18px;background:linear-gradient(90deg,#110d1df2 40%,#110d1d99 82%,transparent)}
 .elevator-panel{position:fixed;inset:0;z-index:7;display:grid;place-items:center;background:#0e0915b8;backdrop-filter:blur(5px)}

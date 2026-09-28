@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Grand Disaster · No-Blender Hotel Editor</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <aside id="sidebar">
+    <header>
+      <div class="eyebrow">THE GRAND DISASTER</div>
+      <h1>Hotel Builder</h1>
+      <p>Build with reusable pieces. No Blender required.</p>
+    </header>
+
+    <section>
+      <h2>Floor</h2>
+      <div id="floors" class="segmented">
+        <button data-floor="1" class="active">1 · Lobby</button>
+        <button data-floor="2">2 · Guest</button>
+        <button data-floor="3">3 · VIP</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Add objects</h2>
+      <div id="palette"></div>
+    </section>
+
+    <section>
+      <h2>Room presets</h2>
+      <div id="presets" class="preset-grid"></div>
+      <p class="help">Presets are editable starting points, not locked models.</p>
+    </section>
+
+    <section id="selection-panel">
+      <h2>Selected object</h2>
+      <div id="nothing-selected">Click an object in the view.</div>
+      <div id="selection-fields" hidden>
+        <strong id="selected-name"></strong>
+        <div class="field-grid">
+          <label>X <input id="object-x" type="number" step=".25"></label>
+          <label>Z <input id="object-z" type="number" step=".25"></label>
+          <label>Height <input id="object-y" type="number" step=".25"></label>
+          <label>Rotation <input id="object-r" type="number" step="15"></label>
+          <label>Scale X <input id="object-sx" type="number" step=".1" min=".1"></label>
+          <label>Scale Z <input id="object-sz" type="number" step=".1" min=".1"></label>
+        </div>
+        <div class="row">
+          <button id="duplicate">Duplicate</button>
+          <button id="delete" class="danger">Delete</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Project</h2>
+      <label>Layout name <input id="layout-name" value="My Grand Disaster Hotel"></label>
+      <div class="row wrap">
+        <button id="save-browser">Save Draft</button>
+        <button id="load-browser">Load Draft</button>
+        <button id="export-json" class="primary">Download JSON</button>
+        <label class="file-button">Import JSON<input id="import-json" type="file" accept=".json,application/json"></label>
+      </div>
+      <p class="help">Put the downloaded file at <code>3d/data/custom-layout.json</code>, then reload the game.</p>
+    </section>
+
+    <footer>
+      <a href="../" target="_blank">Play game ↗</a>
+      <a href="../NO_BLENDER_SETUP.md" target="_blank">Setup guide ↗</a>
+    </footer>
+  </aside>
+
+  <main>
+    <canvas id="editor-canvas"></canvas>
+    <div id="toolbar">
+      <button id="view-left">↶ View</button>
+      <button id="view-right">View ↷</button>
+      <button id="zoom-in">＋</button>
+      <button id="zoom-out">−</button>
+      <label>Snap <select id="snap"><option value=".25">0.25 m</option><option value=".5" selected>0.5 m</option><option value="1">1 m</option></select></label>
+    </div>
+    <div id="status">Ready · Select a floor and add an object</div>
+    <div id="help">Arrow keys move · Q/E rotate · Page Up/Down raise · Delete removes · Ctrl+D duplicates · mouse wheel zoom</div>
+  </main>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
