@@ -5,6 +5,7 @@ import * as THREE from '../vendor/three.module.js';
 import { GLTFLoader } from '../vendor/addons/loaders/GLTFLoader.js';
 import { createWorld } from '../world/scene.js';
 import { collides } from '../systems/player.js';
+import { createDoorSystem, GUEST_ROOMS } from '../systems/doors.js';
 
 const bytes = await readFile(new URL('../assets/grand_disaster_complete_asset_hotel.glb', import.meta.url));
 const gltf = await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
@@ -33,11 +34,19 @@ test('scene starts at a lobby foot position, without the old procedural hotel', 
 
 test('new collision blocks walls, keeps the storage doorway and room 307 opening navigable', () => {
   const world = createWorld();
+  world.hotel = hotel;
+  world.doors = createDoorSystem(world);
   assert.ok(collides(20.2,-17,world.colliders[0]));
   assert.ok(!collides(-10.9,-15.45,world.colliders[0]));
-  assert.ok(collides(-10.9,-15.45,world.colliders[0])===false);
   assert.ok(collides(1.9,-4,world.colliders[3]));
-  world.openRoom307();
+  world.doors.open(307, true);
   assert.equal(collides(1.9,-4,world.colliders[3]),false);
   assert.equal(collides(0,-4,world.colliders[3]),false);
+});
+
+test('all 27 playable rooms have authored doors and the removed end bays are elevator lobbies', () => {
+  assert.equal(GUEST_ROOMS.length, 27);
+  for (const number of GUEST_ROOMS) assert.ok(hotel.getObjectByName(`ROOM_${number}_DOOR_HINGE`), `Room ${number} needs a door`);
+  for (const number of [110,210,310]) assert.equal(hotel.getObjectByName(`ROOM_${number}_DOOR_HINGE`), undefined);
+  for (const floor of [1,2,3]) assert.ok(hotel.getObjectByName(`FLOOR_${floor}_ELEVATOR_LOBBY_ROOT`));
 });

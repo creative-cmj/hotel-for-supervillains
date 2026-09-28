@@ -1,7 +1,7 @@
 import * as THREE from '../vendor/three.module.js';
 
 // The GLB is the sole building visual. These rectangles are gameplay collision only.
-export const HOTEL_MAP_VERSION = 'complete-asset-hotel-2';
+export const HOTEL_MAP_VERSION = 'polished-hotel-1';
 export const FLOOR_HEIGHTS = Object.freeze({ 0: 0, 2: 4.5, 3: 9 });
 export const LOBBY_SPAWN = Object.freeze({ x: 0, y: 0, z: -14.5 });
 
@@ -47,22 +47,45 @@ export function createWorld() {
   // Reception and public furniture the player must navigate around.
   rect(0,1,4.1,-17.65,-16.92);
   rect(0,-2.7,-.5,-20.1,-18.3);
-  const roomDoorCollider = {minX:1.72,maxX:2.1,minZ:-4.78,maxZ:-3.22};
-  colliders[3].push(roomDoorCollider);
+  // East public wing: bar, kitchen, partition walls and purposeful table clusters.
+  rect(0,9.25,15.95,-16.30,-14.20);
+  rect(0,11.35,17.45,-13.80,-11.70);
+  rect(0,8.0,15.90,-14.60,-14.30);rect(0,17.40,20.0,-14.60,-14.30);
+  for(const [x,z] of [[10.8,-20.1],[14,-20.1],[17.2,-20.1],[11.4,-17],[16.5,-17]])rect(0,x-1.05,x+1.05,z-1.05,z+1.05);
+  // West wing: lounge clusters, service partitions, stair and staff fixtures.
+  for(const [x,z] of [[-17.4,-19.8],[-12.5,-19.8],[-17.4,-17],[-14.8,-19.8],[-14.8,-17.1]])rect(0,x-1.25,x+1.25,z-.72,z+.72);
+  for(const [x1,x2] of [[-20,-18.25],[-16.75,-14.95],[-13.45,-11.65],[-10.15,-8]])rect(0,x1,x2,-15.58,-15.32);
+  rect(0,-15.98,-15.72,-15.45,-10);rect(0,-12.68,-12.42,-15.45,-10);
+  rect(0,-19.5,-14.75,-13.45,-11.35); // compact service stair envelope
   const objects = [];
   const avatar = new THREE.Group(); avatar.name='MANAGER_FOOT_ROOT';scene.add(avatar);
   const drizzle = new THREE.Group();drizzle.name='DRIZZLE_FOOT_ROOT';scene.add(drizzle);
   const battery = new THREE.Group();battery.name='BATTERY_GAMEPLAY_PROP';scene.add(battery);
-  const batteryMat=new THREE.MeshStandardMaterial({color:0x29243d,metalness:.45});
-  const batteryMesh=new THREE.Mesh(new THREE.BoxGeometry(.56,.35,.34),batteryMat);
-  battery.add(batteryMesh);battery.position.set(-10.9,.95,-13.2);
-  const heldBattery=battery.clone(true);avatar.add(heldBattery);heldBattery.position.set(-.75,1.05,-.1);heldBattery.visible=false;
+  const batteryMat=new THREE.MeshStandardMaterial({color:0x29243d,metalness:.55,roughness:.28});
+  const batteryGlow=new THREE.MeshStandardMaterial({color:0x32cce8,emissive:0x1688aa,emissiveIntensity:1.2,metalness:.18,roughness:.22});
+  const batteryGold=new THREE.MeshStandardMaterial({color:0xdba94f,metalness:.75,roughness:.25});
+  battery.add(new THREE.Mesh(new THREE.BoxGeometry(.68,.42,.42),batteryMat));
+  for(const side of [-1,1]){const terminal=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.14,10),batteryGold);terminal.position.set(side*.19,.27,0);battery.add(terminal)}
+  const core=new THREE.Mesh(new THREE.BoxGeometry(.44,.12,.445),batteryGlow);core.position.y=.04;battery.add(core);
+  battery.position.set(-10.9,.95,-13.2);
+  const heldBattery=battery.clone(true);avatar.add(heldBattery);heldBattery.position.set(0,1.18,-.48);heldBattery.scale.setScalar(1.18);heldBattery.rotation.x=.12;heldBattery.visible=false;
+  const serviceParcel=new THREE.Group();serviceParcel.name='SERVICE_REQUEST_PARCEL';scene.add(serviceParcel);
+  const parcelBody=new THREE.Mesh(new THREE.BoxGeometry(.72,.42,.52),batteryMat);serviceParcel.add(parcelBody);
+  const parcelBand=new THREE.Mesh(new THREE.BoxGeometry(.14,.45,.55),batteryGold);serviceParcel.add(parcelBand);
+  const parcelGlow=new THREE.Mesh(new THREE.BoxGeometry(.46,.08,.555),batteryGlow);parcelGlow.position.y=.05;serviceParcel.add(parcelGlow);
+  serviceParcel.position.set(-9.6,.9,-13.4);serviceParcel.visible=false;
+  const heldParcel=serviceParcel.clone(true);avatar.add(heldParcel);heldParcel.position.set(0,1.16,-.46);heldParcel.scale.setScalar(1.05);heldParcel.visible=false;
   const noopPart=()=>({rotation:{x:0}});
-  const world={scene,objects,colliders,avatar,drizzle,battery,heldBattery,roomDoor:null,doorCollider:roomDoorCollider,
+  const world={scene,objects,colliders,avatar,drizzle,battery,heldBattery,serviceParcel,heldParcel,roomDoor:null,doorCollider:null,
     machine:null,animated:[],armL:noopPart(),armR:noopPart(),legL:noopPart(),legR:noopPart(),
-    lift:null,liftDoors:[],spawn:LOBBY_SPAWN,hotel:null,guestDoors:[],roomOpen:false,
-    openRoom307(){this.roomOpen=true;const index=colliders[3].indexOf(roomDoorCollider);if(index>=0)colliders[3].splice(index,1);if(this.roomDoor)this.roomDoor.rotation.y=-Math.PI/2;},
-    setFloorVisibility(floor){for(const light of floorLights)light.position.y=FLOOR_HEIGHTS[floor]+3.4;if(!this.hotel)return;this.hotel.traverse(node=>{if(node.isMesh)node.visible=true});}
+    lift:null,liftDoors:[],spawn:LOBBY_SPAWN,hotel:null,guestDoors:[],roomOpen:false,doors:null,population:[],
+    openRoom307(){this.roomOpen=true;this.doors?.open(307,true);},
+    setFloorVisibility(floor){
+      const accent=floor===0?0xffd8ba:floor===2?0xff70c8:0x55d9ff;
+      for(const light of floorLights){light.position.y=FLOOR_HEIGHTS[floor]+3.4;light.color.setHex(accent)}
+      if(this.hotel)this.hotel.traverse(node=>{if(node.isMesh){const assigned=node.userData.hotelFloor;node.visible=assigned===undefined||assigned===floor}});
+      for(const entry of this.population||[])entry.group.visible=entry.data.floor===floor;
+    }
   };
   return world;
 }

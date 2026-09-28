@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { advancePlayer, collides } from '../systems/player.js';
 import { initialMission, transition } from '../systems/mission.js';
 import { findInteraction } from '../systems/interaction.js';
+import { acceptNextRequest, completeRequest, pickupRequestItem } from '../systems/requests.js';
 
 test('interaction prompt requires same floor, proximity, and forward facing', () => {
   const targets = [{ id: 'phone', position: {x: 2, y: 0, z: -2}, radius: 2, prompt: 'Answer Phone' }];
@@ -47,4 +48,18 @@ test('mission rejects delivery without battery and advances only through physica
   assert.equal(transition(delivered, 'exit-computer'), delivered);
   const back = transition(delivered, 'arrive-lobby');
   assert.equal(transition(transition(back, 'use-computer'), 'exit-computer').step, 'complete');
+});
+
+test('repeatable requests require pickup and delivery to the assigned room', () => {
+  let state = { ...initialMission(), step: 'complete' };
+  state = acceptNextRequest(state);
+  assert.equal(state.request.room, 205);
+  assert.equal(completeRequest(state, 205), state);
+  state = pickupRequestItem(state);
+  assert.equal(state.carried, 'service-parcel');
+  assert.equal(completeRequest(state, 303), state);
+  const complete = completeRequest(state, 205, 1000);
+  assert.equal(complete.request, null);
+  assert.equal(complete.cash, 5030);
+  assert.equal(complete.nextRequestAt, 31000);
 });

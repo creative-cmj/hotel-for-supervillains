@@ -7,9 +7,10 @@ export function findInteraction(player, objects, available = () => true) {
     const dz = object.position.z - player.z;
     const distance = Math.hypot(dx, dz);
     if (distance > object.radius || Math.abs(object.position.y - player.y) > 2.5) continue;
-    const facing = dx * Math.sin(player.yaw) - dz * Math.cos(player.yaw);
-    if (facing < -0.5 && distance > 0.9) continue;
-    const score = distance - facing * 0.3;
+    const facing = distance > .001 ? (dx * Math.sin(player.yaw) - dz * Math.cos(player.yaw)) / distance : 1;
+    const minimumFacing = object.minFacing ?? -.15;
+    if (facing < minimumFacing && distance > .65) continue;
+    const score = distance - facing * .85 + (object.priority ?? 0);
     if (score < bestScore) { best = object; bestScore = score; }
   }
   return best;

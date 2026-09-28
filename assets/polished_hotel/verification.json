@@ -1,0 +1,35 @@
+{
+  "mesh_objects": 271,
+  "vertices": 414138,
+  "triangles": 200360,
+  "bounds_m": {
+    "min": [
+      -20.237,
+      -10.193,
+      -0.2
+    ],
+    "max": [
+      20.238,
+      22.12,
+      13.4
+    ]
+  },
+  "removed_guest_rooms": [
+    110,
+    210,
+    310
+  ],
+  "guest_rooms": 27,
+  "elevator_lobbies": 3,
+  "has_room_307": true,
+  "has_weather_machine": true,
+  "has_movable_elevator": true,
+  "source": "assets/final_interior_pack/grand_disaster_complete_asset_hotel.glb",
+  "blend": "grand_disaster_polished_hotel.blend",
+  "glb": "grand_disaster_polished_hotel.glb",
+  "bytes": 14680860,
+  "coordinate_system": {
+    "units": "meters",
+    "glb_up": "+Y"
+  }
+}

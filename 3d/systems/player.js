@@ -6,8 +6,9 @@ export function collides(x, z, obstacles, radius = RADIUS) {
 
 export function advancePlayer(player, input, delta, obstacles) {
   let result=player;
-  const steps=Math.max(1,Math.ceil(Math.min(.16,Math.max(0,delta))/.05));
-  for(let i=0;i<steps;i++)result=advanceStep(result,input,Math.min(.16,Math.max(0,delta))/steps,obstacles);
+  const safeDelta=Math.min(.1,Math.max(0,delta));
+  const steps=Math.max(1,Math.ceil(safeDelta/.025));
+  for(let i=0;i<steps;i++)result=advanceStep(result,input,safeDelta/steps,obstacles);
   return result;
 }
 function advanceStep(player, input, dt, obstacles) {
