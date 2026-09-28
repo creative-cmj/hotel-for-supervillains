@@ -6,7 +6,7 @@ const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('public entrypoint opens the real 3D game and keeps classic playable', async () => {
   const root = await read('../../index.html');
-  assert.match(root, /src="3d\/main\.js\?v=complete-hotel-3"/);
+  assert.match(root, /src="3d\/main\.js\?v=complete-hotel-4"/);
   assert.match(root, /id="world"/);
   const classic = await read('../../classic/index.html');
   assert.match(classic, /src="\.\.\/app\.js"/);
@@ -27,7 +27,7 @@ test('game loads the authoritative complete hotel and foot-level character asset
 
 test('published GLB requests are cache-busted and retry once', async () => {
   const assets = await readFile(new URL('../world/assets.js', import.meta.url), 'utf8');
-  assert.match(assets, /ASSET_VERSION='complete-hotel-3'/);
+  assert.match(assets, /ASSET_VERSION='complete-hotel-4'/);
   assert.match(assets, /attempt<2/);
   assert.match(assets, /retry=\$\{Date\.now\(\)\}/);
 });

@@ -2,7 +2,7 @@ import * as THREE from '../vendor/three.module.js';
 import { GLTFLoader } from '../vendor/addons/loaders/GLTFLoader.js';
 
 const loader=new GLTFLoader();
-const ASSET_VERSION='complete-hotel-3';
+const ASSET_VERSION='complete-hotel-4';
 const assetUrl=name=>new URL(`../assets/${name}`,import.meta.url).href;
 async function load(url){
   let lastError;
