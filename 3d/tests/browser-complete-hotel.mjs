@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 const base=process.env.CDP_ENDPOINT??'http://127.0.0.1:9232';
-const host=process.env.HOTEL_URL??'http://127.0.0.1:4181';
+const host=process.env.HOTEL_URL??'http://127.0.0.1:4180';
 const targets=await(await fetch(base+'/json')).json();
 const target=targets.find(t=>t.type==='page'&&t.url.startsWith(host+'/3d/'));
 assert.ok(target,'Launch Chrome with this hotel test page');
@@ -30,9 +30,12 @@ try{
   console.log('assets',info,'exceptions',exceptions);
   assert.equal(info?.name,'AUTHORITATIVE_COMPLETE_HOTEL');
   assert.equal(info.feet,0);
-  await evalJS("document.querySelector('#start').click()");await delay(700);await shot('lobby');
+  await evalJS("document.querySelector('#start').click()");
+  for(let attempt=0;attempt<30&&!await evalJS('window.__HOTEL_TEST__.started');attempt++)await delay(100);
+  assert.equal(await evalJS('window.__HOTEL_TEST__.started'),true);
+  await shot('lobby');
   assert.equal(await evalJS('window.__HOTEL_TEST__.mission.step'),'phone');
-  await walk('z',-15.3,Math.PI);await walk('x',3.35,Math.PI/2);await walk('z',-15.7,0);await key('KeyE','e');
+  await walk('x',3.35,Math.PI/2);await walk('z',-15.7,0);await key('KeyE','e');
   assert.equal(await evalJS('window.__HOTEL_TEST__.mission.step'),'battery');
   await evalJS("document.querySelector('#close-dialogue').click()");
   await walk('x',0,-Math.PI/2);await walk('z',-17.8,0);await walk('x',-10.9,-Math.PI/2);await walk('z',-13.55,Math.PI);await key('KeyE','e');
