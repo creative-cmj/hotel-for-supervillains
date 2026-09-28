@@ -30,4 +30,15 @@ export const PRESETS = Object.freeze({
       ['plant', -3.6, -2.6, 0], ['plant', 3.6, 2.6, 0], ['luggage', 0, 3, 0], ['sign', 0, -3.8, 0],
     ],
   },
+  hallway: {
+    label: 'Guest Hallway Module',
+    objects: [
+      ['floor', 0, 0, 0, [2,1,2]], ['ceiling', 0, 0, 0, [2,1,2]],
+      ['wall', -4, -2.7, 90, [1.3,1,1]], ['wall', -4, 2.7, 90, [1.3,1,1]],
+      ['wall', 4, -2.7, 90, [1.3,1,1]], ['wall', 4, 2.7, 90, [1.3,1,1]],
+      ['doorframe', -4, 0, 90], ['doorframe', 4, 0, -90],
+      ['sign', -3.82, 1.7, 90], ['sign', 3.82, 1.7, -90],
+      ['plant', -3.1, -3.1, 0], ['plant', 3.1, 3.1, 0],
+    ],
+  },
 });

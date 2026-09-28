@@ -32,6 +32,28 @@ Do not open the HTML files directly from Explorer. The local server is required 
 11. Use **Save Draft** while working. This stores a private draft in that browser.
 12. Use **Download JSON** when the layout is ready.
 
+## Fast editor controls
+
+- **W/A/S/D** moves the camera; hold **Shift** for the faster speed.
+- Mouse wheel zooms, right-drag orbits, and middle-drag pans.
+- Left-drag an object to move it. Choose **Rotate** or **Scale** in the toolbar to make the same drag rotate or resize it.
+- **F** focuses the selection, **Home** resets the camera, and **Numpad 7** opens the high top view.
+- **G** selects Move, **R** selects Rotate, and **Alt+S** selects Scale while keeping ordinary S available for camera movement.
+- Ctrl/Command-click objects in the viewport or outliner to select several. Ctrl+D duplicates; Ctrl+Z and Ctrl+Y undo and redo.
+- Arrow keys nudge the selection. Choose World or Local in the toolbar, and change Snap for the movement/grid size.
+
+The asset browser supports search, category filters, favorites, recently used pieces, and drag-and-drop into the viewport. Door, door-frame, and window pieces align to a nearby wall after you drag or drop them close to it.
+
+## Safety and verification
+
+Every recorded edit updates the visible history, the AI action log, and a browser autosave. **Save Version** makes named restore points such as `Hotel_v01`; the newest 25 versions are retained in that browser. Use **Verify Current Scene** to refresh triangle, material, light, draw-call, hidden-object, and out-of-bounds warnings. **Show Collisions** draws the simple gameplay collision boxes.
+
+The **Play-test at player height** button enters a first-person preview with WASD, mouse look, and collision against solid custom-layout pieces. Press Escape to return to editing. This preview is for quick spatial checks; use the main game link for the complete elevator, mission, doors, guests, saving, and interaction systems.
+
+## Imported models
+
+The importer inspects `.glb` and self-contained `.gltf` files before previewing them. It reports file size, dimensions, mesh count, triangle count, materials, and textures. Browser security makes uploaded previews session-only, so copy an approved model into `assets/external/`, record its license, and let the game integration reference that repository file. Convert `.fbx` and `.obj` files to GLB in Blockbench first.
+
 ## Put a layout in the game
 
 The editor downloads `custom-layout.json`.

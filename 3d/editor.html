@@ -25,6 +25,8 @@
 
     <section>
       <h2>Add objects</h2>
+      <input id="palette-search" type="search" placeholder="Search walls, beds, lights…" aria-label="Search objects">
+      <div id="asset-categories" class="chip-row"></div>
       <div id="palette"></div>
     </section>
 
@@ -35,23 +37,107 @@
     </section>
 
     <section id="selection-panel">
+      <div class="section-title"><h2>Objects on this floor</h2><span id="object-count">0</span></div>
+      <input id="outliner-search" type="search" placeholder="Search scene…" aria-label="Search scene objects">
+      <div id="object-list"></div>
+    </section>
+
+    <section id="selection-panel">
       <h2>Selected object</h2>
       <div id="nothing-selected">Click an object in the view.</div>
       <div id="selection-fields" hidden>
         <strong id="selected-name"></strong>
+        <label>Display name <input id="object-name" type="text"></label>
+        <div class="field-grid hierarchy-fields">
+          <label>Collection <input id="object-collection" type="text" placeholder="Rooms, Lobby, Props…"></label>
+          <label>Parent <select id="object-parent"><option value="">None</option></select></label>
+        </div>
+        <div class="row compact">
+          <button id="toggle-hidden">Hide</button>
+          <button id="toggle-locked">Lock</button>
+          <button id="mirror-x">Mirror X</button>
+          <button id="reset-transform">Reset</button>
+        </div>
         <div class="field-grid">
           <label>X <input id="object-x" type="number" step=".25"></label>
           <label>Z <input id="object-z" type="number" step=".25"></label>
           <label>Height <input id="object-y" type="number" step=".25"></label>
           <label>Rotation <input id="object-r" type="number" step="15"></label>
           <label>Scale X <input id="object-sx" type="number" step=".1" min=".1"></label>
+          <label>Scale Y <input id="object-sy" type="number" step=".1" min=".1"></label>
           <label>Scale Z <input id="object-sz" type="number" step=".1" min=".1"></label>
         </div>
+        <div class="nudge-grid" aria-label="Move selected object">
+          <button data-nudge="0,-1" title="Move forward">↑</button>
+          <button data-nudge="-1,0" title="Move left">←</button>
+          <button data-nudge="0,1" title="Move backward">↓</button>
+          <button data-nudge="1,0" title="Move right">→</button>
+          <button id="rotate-left" title="Rotate left 15 degrees">↶ 15°</button>
+          <button id="rotate-right" title="Rotate right 15 degrees">15° ↷</button>
+        </div>
         <div class="row">
+          <button id="focus-selected">Focus</button>
+          <button id="align-x">Align X</button>
+          <button id="align-z">Align Z</button>
           <button id="duplicate">Duplicate</button>
           <button id="delete" class="danger">Delete</button>
         </div>
+        <details class="inspector-details">
+          <summary>Material</summary>
+          <div class="field-grid">
+            <label>Color <input id="material-color" type="color" value="#64258b"></label>
+            <label>Emission <input id="material-emission" type="color" value="#000000"></label>
+            <label>Roughness <input id="material-roughness" type="range" min="0" max="1" step=".05" value=".5"></label>
+            <label>Metallic <input id="material-metalness" type="range" min="0" max="1" step=".05" value=".1"></label>
+          </div>
+          <div id="material-swatches" class="swatches"></div>
+        </details>
+        <details id="light-controls" class="inspector-details" hidden>
+          <summary>Light</summary>
+          <div class="field-grid">
+            <label>Intensity <input id="light-intensity" type="number" min="0" max="20" step=".5" value="5"></label>
+            <label>Range <input id="light-range" type="number" min="1" max="40" step="1" value="9"></label>
+          </div>
+          <label><input id="light-shadow" type="checkbox"> Cast real-time shadows (expensive)</label>
+        </details>
       </div>
+    </section>
+
+    <section>
+      <h2>Hotel tools</h2>
+      <div class="row wrap">
+        <button id="duplicate-room">Duplicate Selection</button>
+        <button id="duplicate-floor">Duplicate Floor</button>
+        <button id="room-numbers">Number Selected Doors</button>
+        <button id="show-collisions">Show Collisions</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Import model</h2>
+      <label class="file-button">Inspect GLB / glTF<input id="import-model" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"></label>
+      <div id="model-report" class="report muted">GLB works best. Embedded glTF is supported; FBX and OBJ need conversion first.</div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Scene health</h2><button id="refresh-stats" class="tiny-button">Refresh</button></div>
+      <div id="scene-stats" class="report"></div>
+      <div id="scene-warnings" class="warning-list"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>History & versions</h2><span id="history-count">0</span></div>
+      <div id="history-list" class="log-list"></div>
+      <div class="row wrap">
+        <button id="save-version">Save Version</button>
+        <button id="restore-version">Restore Latest</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>AI action log</h2>
+      <div id="action-log" class="log-list"></div>
+      <button id="verify-scene" class="wide-button">Verify Current Scene</button>
     </section>
 
     <section>
@@ -60,10 +146,12 @@
       <div class="row wrap">
         <button id="save-browser">Save Draft</button>
         <button id="load-browser">Load Draft</button>
+        <button id="restore-auto">Restore Autosave</button>
         <button id="export-json" class="primary">Download JSON</button>
         <label class="file-button">Import JSON<input id="import-json" type="file" accept=".json,application/json"></label>
       </div>
       <p class="help">Put the downloaded file at <code>3d/data/custom-layout.json</code>, then reload the game.</p>
+      <button id="play-test" class="play-button">▶ Play-test at player height</button>
     </section>
 
     <footer>
@@ -75,15 +163,26 @@
   <main>
     <canvas id="editor-canvas"></canvas>
     <div id="toolbar">
+      <button id="undo" disabled title="Undo (Ctrl+Z)">↶ Undo</button>
+      <button id="redo" disabled title="Redo (Ctrl+Y)">Redo ↷</button>
+      <span class="toolbar-rule"></span>
+      <button id="tool-move" class="active" title="Move tool (G)">Move</button>
+      <button id="tool-rotate" title="Rotate tool (R)">Rotate</button>
+      <button id="tool-scale" title="Scale tool (Alt+S)">Scale</button>
+      <span class="toolbar-rule"></span>
       <button id="view-left">↶ View</button>
       <button id="view-right">View ↷</button>
+      <button id="top-view">Top</button>
+      <button id="focus-view" title="Focus selected object (F)">Focus</button>
       <button id="zoom-in">＋</button>
       <button id="zoom-out">−</button>
       <button id="reset-view">Reset</button>
       <label>Snap <select id="snap"><option value=".25">0.25 m</option><option value=".5" selected>0.5 m</option><option value="1">1 m</option></select></label>
+      <label>Speed <select id="camera-speed"><option value="4">Slow</option><option value="8" selected>Normal</option><option value="16">Fast</option><option value="28">Very fast</option></select></label>
+      <label>Space <select id="transform-space"><option value="world">World</option><option value="local">Local</option></select></label>
     </div>
     <div id="status">Ready · Select a floor and add an object</div>
-    <div id="help">WASD move camera · mouse wheel zoom · right-drag rotate · middle-drag pan · arrows move selected object</div>
+    <div id="help">WASD camera · wheel zoom · right-drag orbit · middle-drag pan · left-drag object · F focus · Ctrl+Z undo</div>
   </main>
 
   <script type="module" src="editor.js"></script>

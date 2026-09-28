@@ -8,6 +8,8 @@ export const CATALOG = Object.freeze({
   ceiling: { label: 'Ceiling Tile', category: 'Architecture', size: [4, .12, 4], solid: false, offsetY: 4.45 },
   column: { label: 'Gold Column', category: 'Architecture', size: [.45, 4.5, .45], solid: true },
   doorframe: { label: 'Door Frame', category: 'Architecture', size: [2.2, 3.2, .28], solid: false, builder: 'doorframe' },
+  door: { label: 'Working Door Visual', category: 'Architecture', size: [1.85, 3, .16], solid: false, builder: 'door' },
+  window: { label: 'Neon Window', category: 'Architecture', size: [2.5, 2.2, .16], solid: false, builder: 'window', offsetY: 1.1 },
   bed: { label: 'Luxury Bed', category: 'Furniture', size: [2.2, .8, 2.5], solid: true, builder: 'bed' },
   sofa: { label: 'Sofa', category: 'Furniture', size: [2.4, 1.05, .95], solid: true, builder: 'sofa' },
   chair: { label: 'Chair', category: 'Furniture', size: [.75, 1.05, .75], solid: true, builder: 'chair' },
@@ -15,12 +17,15 @@ export const CATALOG = Object.freeze({
   desk: { label: 'Desk', category: 'Furniture', size: [2.1, 1.05, .8], solid: true, builder: 'desk' },
   nightstand: { label: 'Nightstand', category: 'Furniture', size: [.65, .65, .55], solid: true },
   shelf: { label: 'Shelf', category: 'Furniture', size: [1.25, 2.15, .45], solid: true, builder: 'shelf' },
-  lamp: { label: 'Lamp', category: 'Decor', size: [.55, 1.4, .55], solid: true, builder: 'lamp' },
-  plant: { label: 'Plant', category: 'Decor', size: [.7, 1.35, .7], solid: true, builder: 'plant' },
-  sign: { label: 'Wall Sign', category: 'Decor', size: [1.8, .65, .12], solid: false },
+  lamp: { label: 'Lamp', category: 'Props', size: [.55, 1.4, .55], solid: true, builder: 'lamp' },
+  plant: { label: 'Plant', category: 'Props', size: [.7, 1.35, .7], solid: true, builder: 'plant' },
+  sign: { label: 'Wall Sign', category: 'Props', size: [1.8, .65, .12], solid: false },
   luggage: { label: 'Luggage Cart', category: 'Hotel', size: [1.3, 2, .75], solid: true, builder: 'luggage' },
+  reception: { label: 'Reception Desk', category: 'Hotel', size: [3.4, 1.2, 1.05], solid: true, builder: 'reception' },
   console: { label: 'Villain Console', category: 'Villain Tech', size: [1.7, 1.25, .75], solid: true, builder: 'console' },
   emitter: { label: 'Energy Emitter', category: 'Villain Tech', size: [1.1, 1.65, 1.1], solid: true, builder: 'emitter' },
+  guestMarker: { label: 'Guest Placeholder', category: 'Characters', size: [.65, 1.9, .65], solid: false, builder: 'guestMarker' },
+  pointLight: { label: 'Point Light', category: 'Lights', size: [.25, .25, .25], solid: false, builder: 'pointLight', offsetY: 2.8 },
 });
 
 const palette = {
@@ -68,6 +73,16 @@ const builders = {
     box(group, [.18, 3.2, .28], [-1.01, 1.6, 0], materials.gold);
     box(group, [.18, 3.2, .28], [1.01, 1.6, 0], materials.gold);
     box(group, [2.2, .18, .28], [0, 3.11, 0], materials.gold);
+  },
+  door(group) {
+    box(group, [1.85, 3, .16], [0, 1.5, 0], materials.purple);
+    box(group, [.08, 2.7, .18], [-.72, 1.5, -.02], materials.gold);
+    cylinder(group, [.055, .055], .12, [.67, 1.45, -.13], materials.gold, 10).rotation.x = Math.PI / 2;
+  },
+  window(group) {
+    box(group, [2.5, 2.2, .12], [0, 1.1, 0], materials.black);
+    box(group, [2.2, 1.9, .08], [0, 1.1, -.08], materials.cyan);
+    box(group, [.08, 2.05, .16], [0, 1.1, -.1], materials.gold);
   },
   bed(group) {
     box(group, [2.2, .42, 2.5], [0, .32, 0], materials.black);
@@ -120,6 +135,12 @@ const builders = {
     }
     box(group, [1.05, .08, .08], [0, 1.8, .28], materials.gold);
   },
+  reception(group) {
+    box(group, [3.4, 1.05, 1.05], [0, .525, 0], materials.black);
+    box(group, [3.5, .13, 1.16], [0, 1.08, 0], materials.gold);
+    box(group, [2.5, .58, .08], [0, .55, -.53], materials.purple);
+    box(group, [.34, .34, .1], [0, .57, -.59], materials.cyan).rotation.z = Math.PI / 4;
+  },
   console(group) {
     box(group, [1.7, .8, .75], [0, .4, 0], materials.black);
     const screen = box(group, [1.35, .62, .08], [0, 1.0, -.25], materials.cyan);
@@ -131,6 +152,20 @@ const builders = {
     const core = new THREE.Mesh(new THREE.OctahedronGeometry(.42), materials.cyan);
     core.position.y = 1.38;
     group.add(core);
+  },
+  guestMarker(group) {
+    cylinder(group, [.28, .34], 1.15, [0, .78, 0], materials.purple, 12);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.31, 12, 8), materials.cream);
+    head.position.y = 1.58;
+    group.add(head);
+    box(group, [.72, .1, .25], [0, .12, 0], materials.gold);
+  },
+  pointLight(group) {
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.14, 12, 8), materials.cyan);
+    group.add(bulb);
+    const light = new THREE.PointLight(0x55ddff, 5, 9, 2);
+    light.name = 'EDITOR_POINT_LIGHT';
+    group.add(light);
   },
 };
 
@@ -149,9 +184,21 @@ export function createCatalogObject(type, data = {}) {
   group.userData.layout = { id: group.name, type, floor, solid: definition.solid };
   group.traverse((child) => {
     if (child.isMesh) {
+      if (data.material) {
+        child.material = child.material.clone();
+        if (data.material.color) child.material.color?.set(data.material.color);
+        if (data.material.emission) child.material.emissive?.set(data.material.emission);
+        if (Number.isFinite(data.material.roughness)) child.material.roughness = data.material.roughness;
+        if (Number.isFinite(data.material.metalness)) child.material.metalness = data.material.metalness;
+      }
       child.castShadow = false;
       child.receiveShadow = true;
       child.userData.editorRoot = group;
+    }
+    if (child.isPointLight && data.light) {
+      child.intensity = Number(data.light.intensity ?? child.intensity);
+      child.distance = Number(data.light.range ?? child.distance);
+      child.castShadow = Boolean(data.light.shadow);
     }
   });
   return group;
@@ -162,8 +209,8 @@ export function layoutCollider(data) {
   if (!definition?.solid) return null;
   const scale = data.scale || [1, 1, 1];
   const quarterTurn = Math.abs(Math.round(Number(data.rotationY || 0) / 90)) % 2 === 1;
-  const width = definition.size[quarterTurn ? 2 : 0] * scale[quarterTurn ? 2 : 0];
-  const depth = definition.size[quarterTurn ? 0 : 2] * scale[quarterTurn ? 0 : 2];
+  const width = definition.size[quarterTurn ? 2 : 0] * Math.abs(scale[quarterTurn ? 2 : 0]);
+  const depth = definition.size[quarterTurn ? 0 : 2] * Math.abs(scale[quarterTurn ? 0 : 2]);
   return {
     minX: data.position[0] - width / 2,
     maxX: data.position[0] + width / 2,
