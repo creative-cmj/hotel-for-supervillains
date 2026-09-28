@@ -1,0 +1,48 @@
+{
+  "asset": "Grand Disaster Reception Desk",
+  "source_blend": "grand_disaster_reception_desk.blend",
+  "export_glb": "grand_disaster_reception_desk.glb",
+  "verified_by": "Blender 5.1 GLB clean-scene re-import",
+  "coordinate_system": {
+    "glb_up": "+Y",
+    "glb_front": "+Z",
+    "origin": "base center"
+  },
+  "bounds_after_reimport_m": {
+    "min_blender_xyz": [
+      -3.6,
+      -0.952,
+      0.0
+    ],
+    "max_blender_xyz": [
+      3.6,
+      0.805,
+      1.1625
+    ],
+    "dimensions_xyz": [
+      7.2,
+      1.757,
+      1.1625
+    ]
+  },
+  "mesh_objects": 27,
+  "vertices": 6488,
+  "triangles": 3272,
+  "source_triangles": 3272,
+  "materials": [
+    "MAT_Black_Lacquer",
+    "MAT_DeepPurple_Velvet",
+    "MAT_HotPink_Accent",
+    "MAT_NeonCyan",
+    "MAT_Plum_Lacquer",
+    "MAT_PurpleStone_Counter",
+    "MAT_WarmGold"
+  ],
+  "material_count": 7,
+  "textures": [],
+  "glb_bytes": 233144,
+  "root_at_origin": true,
+  "all_mesh_scales_applied": true,
+  "all_meshes_have_material": true,
+  "triangle_count_matches_source": true
+}

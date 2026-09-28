@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { createWorld } from './world/scene.js';
+import { loadWorldAssets } from './world/assets.js';
 import { advancePlayer, collides } from './systems/player.js';
 import { findInteraction } from './systems/interaction.js';
 import { initialMission, transition } from './systems/mission.js';
@@ -11,6 +12,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWid
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const world=createWorld();const camera=new THREE.PerspectiveCamera(63,innerWidth/innerHeight,.1,80);
+window.__HOTEL_ASSETS_READY__=loadWorldAssets(world).catch((error)=>{console.error('Unable to load hotel GLB assets',error);return null});
 const raycaster=new THREE.Raycaster();
 let mission=loadMission();let player=loadPlayer();world.lift.position.y=player.y;
 let started=false,paused=false,dialogue=false,computer=false,osTab='home',isRiding=false,toastUntil=0,last=performance.now(),ringClock=0,stepClock=0,musicClock=0,audio=null,soundOn=true,elapsed=0;
@@ -62,11 +64,11 @@ const target=new THREE.Vector3(player.x,player.y+1.3,player.z);
 let desired=new THREE.Vector3(player.x-Math.sin(aim.yaw)*5.8,player.y+3.2+Math.sin(aim.pitch)*3,player.z+Math.cos(aim.yaw)*5.8);
 if(computer){target.set(7,1.58,-6.4);desired.set(7,1.8,-3.9);}else if(!started){target.set(0,8,19);desired.set(Math.sin(elapsed*.25)*3,10,45);}
 // Camera raycasting against large walls prevents seeing through hotel partitions.
-if(started&&!computer){const direction=desired.clone().sub(target),distance=direction.length();raycaster.set(target,direction.normalize());raycaster.far=distance;const hit=raycaster.intersectObjects(world.scene.children,true).find(h=>{let node=h.object;while(node){if(node===world.avatar)return false;node=node.parent}return h.object.isMesh&&h.distance>.9&&h.distance<distance-.2});if(hit)desired=target.clone().add(direction.multiplyScalar(Math.max(1,hit.distance-.25)));}
+if(started&&!computer){const direction=desired.clone().sub(target),distance=direction.length();raycaster.set(target,direction.normalize());raycaster.far=distance;const hit=raycaster.intersectObjects(world.scene.children,true).find(h=>{let node=h.object;while(node){if(node===world.avatar||node.userData.ignoreCameraCollision)return false;node=node.parent}return h.object.isMesh&&h.distance>.9&&h.distance<distance-.2});if(hit)desired=target.clone().add(direction.multiplyScalar(Math.max(1,hit.distance-.25)));}
 camera.position.lerp(desired,Math.min(1,dt*7));camera.lookAt(target);renderer.render(world.scene,camera);
 if(toastUntil&&now>toastUntil){el('toast').classList.remove('show');toastUntil=0}requestAnimationFrame(frame)}
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='Escape'){if(computer)closeComputer();else if(dialogue){dialogue=false;el('dialogue').hidden=true}else if(started){paused=!paused;el('pause').hidden=!paused;keys.clear()}}if(!started||paused||dialogue||computer)return;if(e.code==='KeyE'&&!e.repeat)interact(findInteraction(player,world.objects,available));if(e.code==='KeyQ'&&!e.repeat)drop()});
+window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='Escape'){if(computer)closeComputer();else if(dialogue){dialogue=false;el('dialogue').hidden=true}else if(started){paused=!paused;el('pause').hidden=!paused;keys.clear()}}if(!started||paused||dialogue||computer)return;if(e.code==='KeyE'&&!e.repeat){let target=findInteraction(player,world.objects,available);if(!target&&mission.floor===3&&!mission.roomOpen&&Math.hypot(player.x-8.15,player.z+18.9)<3.5)target=world.objects.find(o=>o.id==='room-door');interact(target)}if(e.code==='KeyQ'&&!e.repeat)drop()});
 window.addEventListener('keyup',e=>keys.delete(e.code));
 canvas.addEventListener('click',()=>{if(started&&!paused&&!computer&&!dialogue)lockPointer()});
 window.addEventListener('mousemove',e=>{if(!started||computer||paused||dialogue)return;if(document.pointerLockElement===canvas||e.buttons===1){aim.yaw-=e.movementX*.0026;aim.pitch=THREE.MathUtils.clamp(aim.pitch+e.movementY*.002,-.45,.75)}});

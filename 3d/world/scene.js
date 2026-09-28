@@ -36,7 +36,7 @@ export function createWorld() {
   for(const x of [-10,10])for(const z of [-8,8])columns(x,z);
   for(const x of [-7,7])for(const z of [-6,5])lamp(x,z);
   for(const x of [-9,9])for(const z of [-4,7])plant(x,0,z);
-  box(5,.57,-6,9,1.15,1.8,mats.wood);box(5,1.17,-6,9,.12,1.9,mats.gold);box(5,1.42,-7,7,.55,.12,mats.ivory);
+  const legacyDesk=[box(5,.57,-6,9,1.15,1.8,mats.wood),box(5,1.17,-6,9,.12,1.9,mats.gold),box(5,1.42,-7,7,.55,.12,mats.ivory)];
   label('THE GRAND DISASTER',5,3.4,-11.65,6,.9);
   // Computer physically rests behind the desk, not an HUD shortcut.
   box(7,1.63,-6.4,1.35,.9,.16,mats.dark);box(7,1.63,-6.29,1.14,.67,.025,emissive(C.cyan,.2));box(7,1.1,-5.9,1.15,.07,.38,mats.dark);
@@ -59,12 +59,13 @@ export function createWorld() {
   // Third floor stretches toward Room 307. Extra doors are decorative and honest.
   box(0,8.82,-18,17,.3,24,mats.floor);box(0,9.02,-18,3,.04,22,mats.carpet);
   wall(3,-8.5,-18,.5,24);wall(3,8.5,-11,.5,10);wall(3,8.5,-17.5,.5,1);wall(3,8.5,-29,.5,2);wall(3,0,-30,17,.5);wall(3,-7.55,-6.4,1.9,.5);wall(3,2.55,-6.4,11.9,.5);
+  for(const z of [-10,-16,-22,-28]){const fill=new THREE.PointLight(z%12===0?C.gold:0xb8d8ff,42,14);fill.position.set(0,12.4,z);scene.add(fill);}
   for(const z of [-12,-19,-26]){lamp(-6,z,9);lamp(6,z,9)}
   for(const z of [-13,-17,-29]){door(3,-8.15,z,.12,.95);label(z===-13?'301':z===-17?'303':'309',-8.02,11,z,1,.4,'#f9e9ae','#4d365a',Math.PI/2)}
   label('ROOM 307  →',3,12,-15,3,.55);
   // Room 307, with a door opening in its hallway-facing wall.
   box(13,8.82,-23,9,.3,12,mats.floor);wall(3,17.5,-23,.4,12);wall(3,13,-29,9,.5);wall(3,13,-17,9,.5);wall(3,8.5,-23.5,.5,7.5);
-  const roomDoor=door(3,8.48,-18.9,.12,1.6);const doorCollider={minX:8.2,maxX:8.85,minZ:-19.7,maxZ:-18.1};colliders[3].push(doorCollider);register('room-door',8.15,9,-18.9,2.2,'door','Open Room 307',roomDoor);
+  const roomDoor=door(3,8.48,-18.9,.12,1.6);const doorCollider={minX:8.2,maxX:8.85,minZ:-19.7,maxZ:-18.1};colliders[3].push(doorCollider);register('room-door',8.15,9,-18.9,3,'door','Open Room 307',roomDoor);
   label('307',8.03,11,-20.7,1.1,.48,'#fff4d4','#4d365a',Math.PI/2);
   box(14,9.55,-25,3.2,.8,3,mats.wood);box(14,10.05,-25,2.7,.22,2.6,mats.ivory);box(10.5,9.55,-26.8,1.5,1,1,mats.wood);
   for(const x of [11,15.5])lamp(x,-27,9);
@@ -86,5 +87,5 @@ export function createWorld() {
   const armL=box(-.56,1.1,-.06,.22,.95,.27,mats.plum,avatar);const armR=box(.56,1.1,-.06,.22,.95,.27,mats.plum,avatar);
   const legL=box(-.19,.38,0,.26,.76,.32,mats.dark,avatar);const legR=box(.19,.38,0,.26,.76,.32,mats.dark,avatar);
   const heldBattery=new THREE.Group();avatar.add(heldBattery);heldBattery.position.set(-.88,1.18,-.1);box(0,0,0,.66,.43,.42,mats.dark,heldBattery);box(0,.23,0,.35,.08,.17,mats.gold,heldBattery);box(0,.01,.22,.52,.24,.035,mats.cyan,heldBattery);box(0,.01,.25,.24,.06,.02,mats.dark,heldBattery);heldBattery.visible=false;
-  return {scene,objects,colliders,avatar,lift,liftDoors,battery,heldBattery,roomDoor,doorCollider,machine,animated,armL,armR,legL,legR,label};
+  return {scene,objects,colliders,avatar,drizzle,lift,liftDoors,battery,heldBattery,roomDoor,doorCollider,machine,animated,armL,armR,legL,legR,label,legacyDesk};
 }
