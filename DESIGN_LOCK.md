@@ -118,7 +118,7 @@ The hotel itself should be the primary interface.
 3. CAMERA AND PLAYER
 ============================================================
 
-Create a polished third-person controller.
+Create a polished first-person controller.
 
 Controls:
 
@@ -1284,7 +1284,7 @@ FIRST create:
 - Game loop
 - Scene system
 - Player controller
-- Third-person camera
+- First-person camera
 - Collision
 - Interaction system
 - Basic audio architecture

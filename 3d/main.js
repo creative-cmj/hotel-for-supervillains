@@ -27,8 +27,15 @@ renderer.toneMappingExposure = 1.5;
 renderer.shadowMap.enabled = false;
 
 const world = createWorld();
-const camera = new THREE.PerspectiveCamera(63, innerWidth / innerHeight, .1, 80);
-const raycaster = new THREE.Raycaster();
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, .08, 80);
+world.scene.add(camera);
+camera.add(world.heldBattery, world.heldParcel);
+world.heldBattery.position.set(.48, -.55, -1.08);
+world.heldBattery.rotation.set(.1, -.2, -.08);
+world.heldBattery.scale.setScalar(.52);
+world.heldParcel.position.set(.48, -.56, -1.06);
+world.heldParcel.rotation.set(.08, -.18, -.06);
+world.heldParcel.scale.setScalar(.5);
 let mission = loadMission();
 let player = loadPlayer();
 let started = false;
@@ -190,9 +197,9 @@ function updateHud() {
   el('objective').textContent = request?.title || tutorialObjective();
   el('hint').textContent = request?.hint || tutorialHint();
   world.battery.visible = mission.step === 'battery' && mission.carried !== 'battery';
-  world.heldBattery.visible = mission.carried === 'battery';
+  world.heldBattery.visible = started && !computer && mission.carried === 'battery';
   world.serviceParcel.visible = mission.request?.stage === 'pickup' && !mission.carried;
-  world.heldParcel.visible = mission.carried === 'service-parcel';
+  world.heldParcel.visible = started && !computer && mission.carried === 'service-parcel';
   if ((mission.step === 'computer' || mission.step === 'complete') && world.machine?.material?.emissive) {
     world.machine.material.emissiveIntensity = 1.5;
   }
@@ -222,6 +229,7 @@ function openComputer() {
   keys.clear();
   el('computer').hidden = false;
   setState('use-computer');
+  updateHud();
   renderOs();
   document.exitPointerLock?.();
   tone(440, .1);
@@ -230,6 +238,7 @@ function closeComputer() {
   computer = false;
   el('computer').hidden = true;
   if (setState('exit-computer')) notify('FIRST SHIFT COMPLETE · The hotel is open for repeatable guest requests.', 7);
+  updateHud();
   tone(380, .1);
 }
 
@@ -486,43 +495,25 @@ function frame(now) {
   last = now;
   elapsed += delta;
   update(delta);
-  const target = new THREE.Vector3(player.x, player.y + 1.3, player.z);
-  let desired = new THREE.Vector3(
-    player.x - Math.sin(aim.yaw) * 3,
-    player.y + 2.6 + Math.sin(aim.pitch) * 2,
-    player.z + Math.cos(aim.yaw) * 3,
-  );
-  const inLiftEntrance = started && !computer && Math.abs(player.x + 5) < 2.3 && player.z > -11.2 && player.z < -8.2;
-  const inGuestRoom = started && !computer && Math.abs(player.x) > 2.25 && Math.abs(player.x) < 7.8 && player.z > -10 && player.z < 10;
-  if (inLiftEntrance) desired.set(player.x, player.y + 2.65, player.z + 2.45);
-  else if (inGuestRoom) {
-    const roomSide = Math.sign(player.x);
-    desired.set(
-      THREE.MathUtils.clamp(player.x + roomSide * 1.7, roomSide > 0 ? 2.7 : -7.35, roomSide > 0 ? 7.35 : -2.7),
-      player.y + 2.85,
-      THREE.MathUtils.clamp(player.z + 1.65, -9.25, 9.25),
-    );
-  }
+  const target = new THREE.Vector3(player.x, player.y + 1.72, player.z);
   if (computer) {
     target.set(2.2, 1.62, -17);
-    desired.set(2.2, 1.8, -13.8);
+    camera.position.lerp(new THREE.Vector3(2.2, 1.8, -13.8), Math.min(1, delta * 10));
+    camera.lookAt(target);
   } else if (!started) {
     target.set(0, 2, -18);
-    desired.set(Math.sin(elapsed * .25) * 2, 4, -11);
+    camera.position.lerp(new THREE.Vector3(Math.sin(elapsed * .25) * 2, 4, -11), Math.min(1, delta * 7));
+    camera.lookAt(target);
+  } else {
+    const cosPitch = Math.cos(aim.pitch);
+    camera.position.copy(target);
+    camera.lookAt(
+      target.x + Math.sin(aim.yaw) * cosPitch,
+      target.y - Math.sin(aim.pitch),
+      target.z - Math.cos(aim.yaw) * cosPitch,
+    );
   }
-  if (started && !computer && !inLiftEntrance && world.cameraOccluders) {
-    const direction = desired.clone().sub(target);
-    const distance = direction.length();
-    raycaster.set(target, direction.normalize());
-    raycaster.far = distance;
-    const hit = raycaster.intersectObjects(world.cameraOccluders[mission.floor], false)
-      .find((result) => result.distance > .25 && result.distance < distance - .08);
-    if (hit) desired = target.clone().add(direction.multiplyScalar(Math.max(.55, hit.distance - .16)));
-  }
-  world.avatar.visible = !(started && !computer && desired.distanceTo(target) < 1.7);
-  const contracting = camera.position.distanceTo(target) > desired.distanceTo(target);
-  camera.position.lerp(desired, Math.min(1, delta * (contracting ? 15 : 7)));
-  camera.lookAt(target);
+  world.avatar.visible = !started;
   renderer.render(world.scene, camera);
   if (toastUntil && now > toastUntil) {
     el('toast').classList.remove('show');
@@ -573,6 +564,7 @@ el('start').onclick = async () => {
   started = true;
   el('intro').hidden = true;
   audio = new (window.AudioContext || window.webkitAudioContext)();
+  updateHud();
   lockPointer();
   notify('FIRST SHIFT · Welcome to The Grand Disaster', 4);
 };
@@ -651,6 +643,7 @@ window.__HOTEL_TEST__ = debugEnabled ? {
   get roomCount() { return world.doors?.doors.size ?? 0; },
   get doorStates() { return Object.fromEntries([...(world.doors?.doors || [])].map(([number, door]) => [number, door.state])); },
   get populationCount() { return world.population?.length ?? 0; },
+  get cameraMode() { return 'first-person'; },
   get interactions() { return Object.fromEntries(world.objects.map((object) => [object.id, { x: object.position.x, y: object.position.y, z: object.position.z, action: object.action, number: object.number }])); },
   isBlocked: (x, z, floor = mission.floor) => collides(x, z, world.colliders[floor]),
   setYaw: (yaw) => { aim.yaw = yaw; player.yaw = yaw; },

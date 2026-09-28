@@ -12,7 +12,7 @@ test('interaction prompt requires same floor, proximity, and forward facing', ()
   assert.equal(findInteraction({x: 2,z: 0,y:9,yaw:0},targets),null);
 });
 
-test('grounded third-person movement accelerates and stops at a wall', () => {
+test('grounded movement accelerates and stops at a wall', () => {
   const walls = [{ minX: 2, maxX: 3, minZ: -2, maxZ: 2 }];
   let player = { x: 0, z: 0, vx: 0, vz: 0, yaw: 0 };
   player = advancePlayer(player, { forward: true }, 0.1, walls);

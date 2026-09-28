@@ -32,9 +32,9 @@
 
 **Problem:** Public furniture lacked collision, low frame rates caused movement jumps, and the camera could enter walls or collapse at elevator and guest-room thresholds.
 
-**Change:** Added simple collision boxes around major public furniture and structures, movement substeps with a capped delta, floor-aware camera occluders, a lift-arrival camera, and a same-room camera position near guest-room walls.
+**Change:** Added simple collision boxes around major public furniture and structures, movement substeps with a capped delta, and a true first-person camera that stays inside the player collision volume. Carried mission items render at the lower-right of the first-person view.
 
-**Verification:** Automated movement cannot cross exterior/public collision, Room 307 changes from blocked to traversable only after opening, and the regenerated Room 205 screenshot remains readable inside the room.
+**Verification:** Automated movement cannot cross exterior/public collision, Room 307 changes from blocked to traversable only after opening, and the browser test confirms first-person mode while crossing every room threshold.
 
 ### Hotel use and population
 
@@ -60,17 +60,17 @@ The final cache-disabled background Chrome probe measured:
 
 | Area | FPS | Average frame | p95 frame |
 |---|---:|---:|---:|
-| Lobby | 49.8 | 20.07 ms | 33.4 ms |
-| Floor 2 | 46.5 | 21.51 ms | 33.4 ms |
-| Floor 3 | 44.6 | 22.42 ms | 33.4 ms |
+| Lobby | 60.0 | 16.67 ms | 16.8 ms |
+| Floor 2 | 60.0 | 16.67 ms | 16.8 ms |
+| Floor 3 | 59.5 | 16.82 ms | 16.8 ms |
 
-Local asset readiness was 290 ms over the local HTTP server with browser cache disabled. These figures are from automated headless Chrome on the development machine and are suitable for regression comparison; deployed network load and other hardware will differ.
+Local asset readiness was 260 ms over the local HTTP server with browser cache disabled. These figures are from automated headless Chrome on the development machine and are suitable for regression comparison; deployed network load and other hardware will differ.
 
 ## Final QA
 
 - First Shift: PASS
 - Movement and low-FPS delta handling: PASS
-- Camera: PASS after lift and guest-room threshold repairs
+- First-person camera: PASS across lift travel, Room 307, and all guest-room thresholds
 - Structural and public-wing collision: PASS
 - Three-floor elevator: PASS
 - All 27 retained doors and doorway traversal: PASS

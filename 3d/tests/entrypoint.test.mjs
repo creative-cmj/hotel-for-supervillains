@@ -31,3 +31,10 @@ test('published GLB requests are cache-busted and retry once', async () => {
   assert.match(assets, /attempt\s*=\s*0;\s*attempt\s*<\s*2/);
   assert.match(assets, /retry=\$\{Date\.now\(\)\}/);
 });
+
+test('the playable camera is first-person and keeps carried items in view', async () => {
+  const main = await read('../main.js');
+  assert.match(main, /get cameraMode\(\) \{ return 'first-person'; \}/);
+  assert.match(main, /camera\.add\(world\.heldBattery, world\.heldParcel\)/);
+  assert.match(main, /camera\.position\.copy\(target\)/);
+});

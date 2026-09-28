@@ -61,6 +61,7 @@ assert.ok(await evaluate('Boolean(window.__HOTEL_TEST__)'), '3D game failed to b
 for (let i = 0; i < 50 && await evaluate("document.querySelector('#start').disabled"); i++) await delay(250);
 assert.equal(await evaluate('window.__HOTEL_TEST__.roomCount'), 27);
 assert.equal(await evaluate('window.__HOTEL_TEST__.populationCount'), 7);
+assert.equal(await evaluate('window.__HOTEL_TEST__.cameraMode'), 'first-person');
 assert.equal(await evaluate("document.querySelector('#loading-status').textContent"), '27 guest rooms · 3 floors · Hotel ready');
 await evaluate("document.querySelector('#start').click()");
 await delay(300);
@@ -112,7 +113,7 @@ await key('KeyE', 'e');
 await delay(500);
 assert.equal(await evaluate('window.__HOTEL_TEST__.mission.roomOpen'), true);
 assert.equal(await evaluate('window.__HOTEL_TEST__.isBlocked(1.9,-4,3)'), false);
-await setNear('drizzle', -1.0, 0, Math.PI / 2, 3);
+await setNear('drizzle', -1.65, 0, Math.PI / 2, 3);
 await key('KeyE', 'e');
 assert.equal(await evaluate('window.__HOTEL_TEST__.mission.step'), 'computer');
 assert.equal(await evaluate('window.__HOTEL_TEST__.mission.cash'), 5150);

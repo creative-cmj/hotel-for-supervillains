@@ -12,7 +12,7 @@ python -m http.server 4180
 
 Open `http://127.0.0.1:4180/` in a desktop browser with WebGL support. The browser version is also published via GitHub Pages. The 3D runtime's Three.js dependency is vendored under `3d/vendor`, so playing does not require npm or an external CDN.
 
-- WASD or arrow keys: move. Mouse: camera. Shift: run.
+- First-person view. WASD or arrow keys: move. Mouse: look. Shift: run.
 - E: interact. Q: drop a carried item. Esc: close a panel, close the computer, or pause.
 - Walk to the ringing front-desk phone, answer Drizzle's request, find and carry the industrial battery from Storage, enter the lift and select Floor 3, open Room 307, deliver the battery, ride back, and use the physical manager computer.
 - Computer apps: HOME, GUESTS, HOTEL MAP. Exit with Esc or EXIT.
