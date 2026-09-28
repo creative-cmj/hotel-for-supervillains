@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { createWorld, HOTEL_MAP_VERSION, FLOOR_HEIGHTS } from './world/scene.js';
-import { loadWorldAssets } from './world/assets.js';
+import { loadWorldAssets } from './world/assets.js?v=complete-hotel-3';
 import { advancePlayer, collides } from './systems/player.js';
 import { findInteraction } from './systems/interaction.js';
 import { initialMission, transition } from './systems/mission.js';
