@@ -29,7 +29,14 @@ test('editor ships multiple editable room presets and an empty safe runtime layo
 
 test('visual editor exposes floor, transform, preset, save, import, and export controls', async () => {
   const html = await readFile(new URL('../editor.html', import.meta.url), 'utf8');
-  for (const id of ['floors','palette','presets','object-x','object-z','object-y','object-r','duplicate','delete','save-browser','load-browser','export-json','import-json']) {
+  for (const id of ['floors','palette','presets','object-x','object-z','object-y','object-r','duplicate','delete','zoom-in','zoom-out','reset-view','save-browser','load-browser','export-json','import-json']) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
+  }
+});
+
+test('visual editor provides keyboard, mouse zoom, rotate, pan, and reset camera controls', async () => {
+  const source = await readFile(new URL('../editor.js', import.meta.url), 'utf8');
+  for (const control of ['KeyW','KeyA','KeyS','KeyD','wheel','pointermove','reset-view']) {
+    assert.match(source, new RegExp(control));
   }
 });

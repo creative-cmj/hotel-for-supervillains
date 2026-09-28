@@ -23,8 +23,11 @@ let selected = null;
 let floor = 1;
 let viewAngle = Math.PI * .25;
 let distance = 20;
+const viewTarget = new THREE.Vector3(0, FLOOR_HEIGHTS[1], 0);
+const cameraKeys = new Set();
 let idCounter = 1;
 let pointerDown = null;
+let lastFrame = performance.now();
 
 for (const level of [1, 2, 3]) {
   const grid = new THREE.GridHelper(40, 40, level === 1 ? 0xd39a50 : level === 2 ? 0xe358bd : 0x52d8ee, 0x44304d);
@@ -47,8 +50,26 @@ function updateFloorVisibility() {
 }
 function updateCamera() {
   const y = FLOOR_HEIGHTS[floor];
-  camera.position.set(Math.sin(viewAngle) * distance, y + distance * .68, Math.cos(viewAngle) * distance);
-  camera.lookAt(0, y, 0);
+  viewTarget.y = y;
+  camera.position.set(viewTarget.x + Math.sin(viewAngle) * distance, y + distance * .68, viewTarget.z + Math.cos(viewAngle) * distance);
+  camera.lookAt(viewTarget);
+}
+function resetView() {
+  viewTarget.set(0, FLOOR_HEIGHTS[floor], 0);
+  viewAngle = Math.PI * .25;
+  distance = 20;
+  updateCamera();
+  status(`View reset on Floor ${floor}`);
+}
+function moveCamera(delta) {
+  const forward = Number(cameraKeys.has('KeyW')) - Number(cameraKeys.has('KeyS'));
+  const right = Number(cameraKeys.has('KeyD')) - Number(cameraKeys.has('KeyA'));
+  if (!forward && !right) return;
+  const length = Math.hypot(forward, right) || 1;
+  const speed = (cameraKeys.has('ShiftLeft') || cameraKeys.has('ShiftRight') ? 16 : 8) * delta;
+  viewTarget.x += ((-Math.sin(viewAngle) * forward + Math.cos(viewAngle) * right) / length) * speed;
+  viewTarget.z += ((-Math.cos(viewAngle) * forward - Math.sin(viewAngle) * right) / length) * speed;
+  updateCamera();
 }
 function select(root) {
   selected = root;
@@ -160,6 +181,7 @@ el('view-left').onclick = () => { viewAngle -= Math.PI / 4; updateCamera(); };
 el('view-right').onclick = () => { viewAngle += Math.PI / 4; updateCamera(); };
 el('zoom-in').onclick = () => { distance = Math.max(9, distance - 3); updateCamera(); };
 el('zoom-out').onclick = () => { distance = Math.min(55, distance + 3); updateCamera(); };
+el('reset-view').onclick = resetView;
 el('save-browser').onclick = () => { localStorage.setItem('grand-disaster-layout-draft', JSON.stringify(serializeLayout())); status('Draft saved in this browser'); };
 el('load-browser').onclick = () => {
   const saved = localStorage.getItem('grand-disaster-layout-draft');
@@ -174,15 +196,41 @@ el('import-json').onchange = async (event) => {
   event.target.value = '';
 };
 
-canvas.addEventListener('pointerdown', (event) => { pointerDown = { x: event.clientX, y: event.clientY }; });
+canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+canvas.addEventListener('pointerdown', (event) => {
+  pointerDown = { x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, button: event.button, moved: false };
+  canvas.setPointerCapture?.(event.pointerId);
+});
+canvas.addEventListener('pointermove', (event) => {
+  if (!pointerDown) return;
+  const dx = event.clientX - pointerDown.lastX;
+  const dy = event.clientY - pointerDown.lastY;
+  if (Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y) > 4) pointerDown.moved = true;
+  if (pointerDown.button === 2) {
+    viewAngle -= dx * .009;
+    distance = THREE.MathUtils.clamp(distance + dy * .035, 9, 55);
+    updateCamera();
+  } else if (pointerDown.button === 1) {
+    const panScale = distance * .0028;
+    viewTarget.x += (-Math.cos(viewAngle) * dx + Math.sin(viewAngle) * dy) * panScale;
+    viewTarget.z += (Math.sin(viewAngle) * dx + Math.cos(viewAngle) * dy) * panScale;
+    updateCamera();
+  }
+  pointerDown.lastX = event.clientX;
+  pointerDown.lastY = event.clientY;
+});
 canvas.addEventListener('pointerup', (event) => {
-  if (!pointerDown || Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y) > 5) return;
+  if (!pointerDown) return;
+  const wasClick = !pointerDown.moved && pointerDown.button === 0;
+  pointerDown = null;
+  if (!wasClick) return;
   const rect = canvas.getBoundingClientRect();
   pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObjects(activeRoots(), true)[0];
   select(hit?.object.userData.editorRoot || null);
 });
+canvas.addEventListener('pointercancel', () => { pointerDown = null; });
 canvas.addEventListener('wheel', (event) => {
   event.preventDefault();
   distance = THREE.MathUtils.clamp(distance + Math.sign(event.deltaY) * 2, 9, 55);
@@ -191,6 +239,11 @@ canvas.addEventListener('wheel', (event) => {
 window.addEventListener('keydown', (event) => {
   if (event.target.matches('input,select')) return;
   if (event.ctrlKey && event.code === 'KeyD') { event.preventDefault(); if (selected) addObject(selected.userData.layout.type, serializeObject(selected)); return; }
+  if (['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight'].includes(event.code)) {
+    cameraKeys.add(event.code);
+    event.preventDefault();
+    return;
+  }
   if (!selected) return;
   const step = Number(el('snap').value);
   if (event.code === 'ArrowLeft') selected.position.x = snap(selected.position.x - step);
@@ -206,13 +259,18 @@ window.addEventListener('keydown', (event) => {
     event.preventDefault(); select(selected);
   }
 });
+window.addEventListener('keyup', (event) => cameraKeys.delete(event.code));
+window.addEventListener('blur', () => cameraKeys.clear());
 function resize() {
   const width = canvas.clientWidth, height = canvas.clientHeight;
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 }
-function frame() {
+function frame(now) {
+  const delta = Math.min(.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+  moveCamera(delta);
   resize();
   if (selected) selectionBox.setFromObject(selected);
   renderer.render(scene, camera);
@@ -220,5 +278,5 @@ function frame() {
 }
 updateFloorVisibility();
 updateCamera();
-frame();
-window.__HOTEL_EDITOR_TEST__ = { CATALOG, serializeLayout, loadLayout, addObject, get floor() { return floor; }, get objectCount() { return roots.length; } };
+requestAnimationFrame(frame);
+window.__HOTEL_EDITOR_TEST__ = { CATALOG, serializeLayout, loadLayout, addObject, get floor() { return floor; }, get objectCount() { return roots.length; }, get cameraState() { return { target: viewTarget.toArray(), distance, angle: viewAngle }; } };

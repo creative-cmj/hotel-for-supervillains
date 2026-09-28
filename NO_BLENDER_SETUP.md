@@ -23,12 +23,14 @@ Do not open the HTML files directly from Explorer. The local server is required 
 2. Add individual walls, floors, furniture, signs, hotel props, or villain-tech pieces.
 3. Alternatively, add **Standard Room A**, **Standard Room B**, **VIP Room**, or **Lobby Seating** as an editable starting point.
 4. Click an object in the 3D view.
-5. Move it with the arrow keys or exact X/Z fields.
-6. Rotate with Q/E or the Rotation field.
-7. Use Page Up/Page Down for height.
-8. Press Ctrl+D to duplicate or Delete to remove.
-9. Use **Save Draft** while working. This stores a private draft in that browser.
-10. Use **Download JSON** when the layout is ready.
+5. Move the camera with W/A/S/D. Hold Shift to move faster.
+6. Zoom with the mouse wheel, rotate with right-drag, and pan with middle-drag. Use **Reset** if you lose the room.
+7. Move the selected object with the arrow keys or exact X/Z fields.
+8. Rotate the selected object with Q/E or the Rotation field.
+9. Use Page Up/Page Down for object height.
+10. Press Ctrl+D to duplicate or Delete to remove.
+11. Use **Save Draft** while working. This stores a private draft in that browser.
+12. Use **Download JSON** when the layout is ready.
 
 ## Put a layout in the game
 
