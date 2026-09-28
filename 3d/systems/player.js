@@ -5,7 +5,12 @@ export function collides(x, z, obstacles, radius = RADIUS) {
 }
 
 export function advancePlayer(player, input, delta, obstacles) {
-  const dt = Math.min(0.05, Math.max(0, delta));
+  let result=player;
+  const steps=Math.max(1,Math.ceil(Math.min(.16,Math.max(0,delta))/.05));
+  for(let i=0;i<steps;i++)result=advanceStep(result,input,Math.min(.16,Math.max(0,delta))/steps,obstacles);
+  return result;
+}
+function advanceStep(player, input, dt, obstacles) {
   const forward = Number(Boolean(input.forward)) - Number(Boolean(input.back));
   const strafe = Number(Boolean(input.right)) - Number(Boolean(input.left));
   const magnitude = Math.hypot(forward, strafe) || 1;
