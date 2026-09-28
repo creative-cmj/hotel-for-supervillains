@@ -16,8 +16,9 @@ test('game loads the authoritative complete hotel and foot-level character asset
   const main = await read('../main.js');
   const assets = await read('../world/assets.js');
   assert.match(main, /loadWorldAssets\(world\)/);
+  assert.match(assets, /new URL\(`\.\.\/assets\/\$\{name\}`\s*,\s*import\.meta\.url\)/);
   for (const file of ['grand_disaster_complete_asset_hotel.glb', 'grand_disaster_manager.glb', 'doctor_drizzle_final.glb']) {
-    assert.match(assets, new RegExp(`assets/${file.replace('.', '\\.')}`));
+    assert.match(assets, new RegExp(`assetUrl\\('${file.replace('.', '\\.')}\\'\\)`));
     assert.ok((await stat(new URL(`../assets/${file}`, import.meta.url))).size > 1000, `${file} must be a real local GLB`);
   }
   assert.match(assets, /ROOM_307_BATTERY_PLACEMENT/);

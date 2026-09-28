@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 const endpoint=process.env.CDP_ENDPOINT??'http://127.0.0.1:9232';
 const host=process.env.HOTEL_URL??'http://127.0.0.1:4180';
+const page=process.env.HOTEL_PAGE??'/3d/game.html';
 const targets=await(await fetch(`${endpoint}/json`)).json();
 const target=targets.find(item=>item.type==='page');
 assert.ok(target,'Launch Chrome with remote debugging before running this test');
@@ -27,7 +28,7 @@ const rideFrom=async(floor,expectedFloor,expectedY)=>{
 
 try{
   await call('Runtime.enable');
-  await call('Page.navigate',{url:`${host}/3d/game.html?debug=1&elevator=${Date.now()}`});
+  await call('Page.navigate',{url:`${host}${page}?debug=1&elevator=${Date.now()}`});
   for(let attempt=0;attempt<80&&!await evaluate('Boolean(window.__HOTEL_TEST__&&window.__HOTEL_ASSETS_READY__)');attempt++)await wait(100);
   await evaluate('window.__HOTEL_ASSETS_READY__.then(()=>true)');
   assert.equal(await evaluate('window.__HOTEL_TEST__.hotelName'),'AUTHORITATIVE_COMPLETE_HOTEL');

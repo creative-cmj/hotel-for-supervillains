@@ -3,6 +3,7 @@ import { GLTFLoader } from '../vendor/addons/loaders/GLTFLoader.js';
 
 const loader=new GLTFLoader();
 const ASSET_VERSION='complete-hotel-3';
+const assetUrl=name=>new URL(`../assets/${name}`,import.meta.url).href;
 async function load(url){
   let lastError;
   for(let attempt=0;attempt<2;attempt++){
@@ -18,9 +19,9 @@ const register=(world,id,position,radius,action,prompt,mesh=null)=>world.objects
 
 export async function loadWorldAssets(world){
   const [hotel,manager,drizzle]=await Promise.all([
-    load('./assets/grand_disaster_complete_asset_hotel.glb'),
-    load('./assets/grand_disaster_manager.glb'),
-    load('./assets/doctor_drizzle_final.glb'),
+    load(assetUrl('grand_disaster_complete_asset_hotel.glb')),
+    load(assetUrl('grand_disaster_manager.glb')),
+    load(assetUrl('doctor_drizzle_final.glb')),
   ]);
   hotel.name='AUTHORITATIVE_COMPLETE_HOTEL';
   hotel.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=true;node.userData.ignoreCameraCollision=true}});
