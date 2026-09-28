@@ -64,6 +64,7 @@ assert.equal(await evaluate('window.__HOTEL_TEST__.populationCount'), 7);
 assert.equal(await evaluate("document.querySelector('#loading-status').textContent"), '27 guest rooms · 3 floors · Hotel ready');
 await evaluate("document.querySelector('#start').click()");
 await delay(300);
+await screenshot('preview-lobby-polished.png');
 
 // Movement is driven by real held keyboard input, then collision is checked at the outer wall.
 await evaluate('window.__HOTEL_TEST__.setYaw(0)');
@@ -75,6 +76,12 @@ await delay(120);
 const moved = JSON.parse(await evaluate('JSON.stringify(window.__HOTEL_TEST__.player)'));
 assert.ok(moved.z < start.z - .25, 'Held W must move the manager through the 3D hotel');
 assert.equal(await evaluate('window.__HOTEL_TEST__.isBlocked(20.2,-17,0)'), true);
+await evaluate('window.__HOTEL_TEST__.setPos(8.8,-18,0);window.__HOTEL_TEST__.setYaw(Math.PI/2)');
+await delay(250);
+await screenshot('preview-public-wing-polished.png');
+await evaluate('window.__HOTEL_TEST__.setPos(-10.5,-17.2,0);window.__HOTEL_TEST__.setYaw(-Math.PI/2)');
+await delay(250);
+await screenshot('preview-lounge-polished.png');
 
 // First Shift: every mission action uses the visible prompt and real E key.
 await setNear('phone', 0, 1.0, 0, 0);
@@ -91,6 +98,7 @@ await setNear('lift0', 0, 1.0, 0, 0);
 await key('KeyE', 'e');
 assert.equal(await evaluate("document.querySelector('#elevator-panel').hidden"), false);
 assert.equal(await evaluate(`document.querySelector('[data-floor="0"]').disabled`), true);
+await screenshot('preview-elevator-panel-polished.png');
 await evaluate(`document.querySelector('[data-floor="3"]').click()`);
 await delay(2650);
 assert.equal(await evaluate('window.__HOTEL_TEST__.mission.floor'), 3);
@@ -142,20 +150,35 @@ await key('KeyE', 'e');
 await evaluate(`document.querySelector('[data-floor="2"]').click()`);
 await delay(2650);
 assert.equal(await evaluate('window.__HOTEL_TEST__.mission.floor'), 2);
+await screenshot('preview-floor2-polished.png');
 await evaluate('window.__HOTEL_TEST__.setPos(.45,0,2);window.__HOTEL_TEST__.setYaw(Math.PI/2)');
 await delay(120);
 await key('KeyE', 'e');
 await delay(500);
 await evaluate('window.__HOTEL_TEST__.setPos(2.5,0,2);window.__HOTEL_TEST__.setYaw(Math.PI/2)');
 await delay(120);
+await screenshot('preview-standard-room-polished.png');
 await key('KeyE', 'e');
 assert.equal(await evaluate('window.__HOTEL_TEST__.mission.request'), null);
 assert.equal(await evaluate('window.__HOTEL_TEST__.mission.cash'), 5330);
 
-// Exercise every retained room-door system and verify no door is missing.
+// Physically cross every retained guest-room doorway with held movement input.
 const rooms = [101,102,103,104,105,106,107,108,109,201,202,203,204,205,206,207,208,209,301,302,303,304,305,306,307,308,309];
-for (const room of rooms) await evaluate(`window.__HOTEL_TEST__.interact('room-${room}')`);
-await delay(700);
+for (const room of rooms) {
+  const floor = room < 200 ? 0 : room < 300 ? 2 : 3;
+  const side = room % 2 ? 1 : -1;
+  const door = JSON.parse(await evaluate(`JSON.stringify(window.__HOTEL_TEST__.interactions['room-${room}'])`));
+  await evaluate(`window.__HOTEL_TEST__.setPos(${side * .45},${door.z},${floor});window.__HOTEL_TEST__.setYaw(${side > 0 ? 'Math.PI/2' : '-Math.PI/2'})`);
+  await delay(80);
+  const state = await evaluate(`window.__HOTEL_TEST__.doorStates['${room}']`);
+  if (!['open','opening'].includes(state)) { await key('KeyE', 'e'); await delay(450); }
+  await call('Input.dispatchKeyEvent', { type: 'keyDown', code: 'KeyW', key: 'w' });
+  await delay(650);
+  await call('Input.dispatchKeyEvent', { type: 'keyUp', code: 'KeyW', key: 'w' });
+  await delay(80);
+  const enteredX = await evaluate('window.__HOTEL_TEST__.player.x');
+  assert.ok(side > 0 ? enteredX > 2.2 : enteredX < -2.2, `Could not walk through Room ${room} doorway; x=${enteredX}`);
+}
 const doorStates = JSON.parse(await evaluate('JSON.stringify(window.__HOTEL_TEST__.doorStates)'));
 assert.equal(Object.keys(doorStates).length, 27);
 assert.ok(Object.values(doorStates).every((state) => ['opening','closing','open','closed'].includes(state)));

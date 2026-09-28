@@ -32,6 +32,12 @@ For the browser acceptance playthrough: serve the repository on port 4180, launc
 node 3d/tests/browser-vertical-slice.mjs
 ```
 
+With the same Chrome debugging session active, profile all three floors with:
+
+```bash
+node 3d/tests/performance-smoke.mjs
+```
+
 The browser test uses real keyboard and interaction events for movement, the First Shift route, lift selection, Room 307, a repeatable Room 205 delivery, the manager OS, all 27 door systems, save/reload, pause, the root entrypoint, and Classic. It collects browser exceptions and captures visual QA screenshots under `3d/preview-*-polished.png`. After publication, run `npm run test:live --prefix 3d` with Chrome on CDP port 9231 to smoke-test the deployed root and Classic paths.
 
 ## Scope

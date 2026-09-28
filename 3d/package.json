@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/foundation.test.mjs tests/entrypoint.test.mjs",
+    "test": "node --test tests/foundation.test.mjs tests/entrypoint.test.mjs tests/complete-hotel.test.mjs",
     "test:browser": "node tests/browser-vertical-slice.mjs",
+    "test:performance": "node tests/performance-smoke.mjs",
     "test:live": "node tests/live-smoke.mjs"
   },
   "dependencies": {

@@ -493,7 +493,16 @@ function frame(now) {
     player.z + Math.cos(aim.yaw) * 3,
   );
   const inLiftEntrance = started && !computer && Math.abs(player.x + 5) < 2.3 && player.z > -11.2 && player.z < -8.2;
+  const inGuestRoom = started && !computer && Math.abs(player.x) > 2.25 && Math.abs(player.x) < 7.8 && player.z > -10 && player.z < 10;
   if (inLiftEntrance) desired.set(player.x, player.y + 2.65, player.z + 2.45);
+  else if (inGuestRoom) {
+    const roomSide = Math.sign(player.x);
+    desired.set(
+      THREE.MathUtils.clamp(player.x + roomSide * 1.7, roomSide > 0 ? 2.7 : -7.35, roomSide > 0 ? 7.35 : -2.7),
+      player.y + 2.85,
+      THREE.MathUtils.clamp(player.z + 1.65, -9.25, 9.25),
+    );
+  }
   if (computer) {
     target.set(2.2, 1.62, -17);
     desired.set(2.2, 1.8, -13.8);
