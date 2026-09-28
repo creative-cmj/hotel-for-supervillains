@@ -1,9 +1,9 @@
 import * as THREE from '../vendor/three.module.js';
 
 // The GLB is the sole building visual. These rectangles are gameplay collision only.
-export const HOTEL_MAP_VERSION = 'complete-asset-hotel-1';
+export const HOTEL_MAP_VERSION = 'complete-asset-hotel-2';
 export const FLOOR_HEIGHTS = Object.freeze({ 0: 0, 2: 4.5, 3: 9 });
-export const LOBBY_SPAWN = Object.freeze({ x: 0, y: 0, z: -17.3 });
+export const LOBBY_SPAWN = Object.freeze({ x: 0, y: 0, z: -14.5 });
 
 export function createWorld() {
   const scene = new THREE.Scene();
@@ -62,7 +62,7 @@ export function createWorld() {
     machine:null,animated:[],armL:noopPart(),armR:noopPart(),legL:noopPart(),legR:noopPart(),
     lift:null,liftDoors:[],spawn:LOBBY_SPAWN,hotel:null,guestDoors:[],roomOpen:false,
     openRoom307(){this.roomOpen=true;const index=colliders[3].indexOf(roomDoorCollider);if(index>=0)colliders[3].splice(index,1);if(this.roomDoor)this.roomDoor.rotation.y=-Math.PI/2;},
-    setFloorVisibility(floor){for(const light of floorLights)light.position.y=FLOOR_HEIGHTS[floor]+3.4;if(!this.hotel)return;this.hotel.traverse(node=>{if(node.isMesh&&node.userData.hotelFloor!==undefined)node.visible=node.userData.hotelFloor===floor});}
+    setFloorVisibility(floor){for(const light of floorLights)light.position.y=FLOOR_HEIGHTS[floor]+3.4;if(!this.hotel)return;this.hotel.traverse(node=>{if(node.isMesh)node.visible=true});}
   };
   return world;
 }
