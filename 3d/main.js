@@ -12,7 +12,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,.85));renderer.setSize(innerWid
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;
 renderer.shadowMap.enabled=false;
 const world=createWorld();const camera=new THREE.PerspectiveCamera(63,innerWidth/innerHeight,.1,80);
-window.__HOTEL_ASSETS_READY__=loadWorldAssets(world).then(assets=>{world.lift.position.y=FLOOR_HEIGHTS[mission.floor];world.setFloorVisibility(mission.floor);updateHud();return assets}).catch(error=>{console.error('Unable to load authoritative hotel GLB',error);el('start').disabled=true;el('start').textContent='Hotel asset failed to load — reload to try again';throw error});
+window.__HOTEL_ASSETS_READY__=loadWorldAssets(world).then(assets=>{world.lift.position.y=FLOOR_HEIGHTS[mission.floor];world.setFloorVisibility(mission.floor);updateHud();return assets}).catch(error=>{console.error('Unable to load authoritative hotel GLB after retry',error);const start=el('start');start.disabled=false;start.textContent='RETRY HOTEL LOAD';start.onclick=()=>location.reload();return null});
 const raycaster=new THREE.Raycaster();
 let mission=loadMission();let player=loadPlayer();
 let started=false,paused=false,dialogue=false,computer=false,osTab='home',isRiding=false,toastUntil=0,last=performance.now(),ringClock=0,stepClock=0,musicClock=0,audio=null,soundOn=true,elapsed=0;

@@ -2,7 +2,16 @@ import * as THREE from '../vendor/three.module.js';
 import { GLTFLoader } from '../vendor/addons/loaders/GLTFLoader.js';
 
 const loader=new GLTFLoader();
-const load=url=>loader.loadAsync(url).then(gltf=>gltf.scene);
+const ASSET_VERSION='complete-hotel-3';
+async function load(url){
+  let lastError;
+  for(let attempt=0;attempt<2;attempt++){
+    const separator=url.includes('?')?'&':'?';
+    const requestUrl=`${url}${separator}v=${ASSET_VERSION}${attempt?`&retry=${Date.now()}`:''}`;
+    try{return (await loader.loadAsync(requestUrl)).scene}catch(error){lastError=error;if(!attempt)console.warn(`Retrying hotel asset ${url}`,error)}
+  }
+  throw lastError;
+}
 const requireNode=(root,name)=>{const node=root.getObjectByName(name);if(!node)throw Error(`Hotel asset missing ${name}`);return node};
 const point=(node)=>node.getWorldPosition(new THREE.Vector3());
 const register=(world,id,position,radius,action,prompt,mesh=null)=>world.objects.push({id,position:new THREE.Vector3(position.x,position.y,position.z),radius,action,prompt,mesh});

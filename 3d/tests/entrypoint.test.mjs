@@ -23,3 +23,10 @@ test('game loads the authoritative complete hotel and foot-level character asset
   assert.match(assets, /ROOM_307_BATTERY_PLACEMENT/);
   assert.match(assets, /ROOM_307_WEATHER_MACHINE_VISUAL/);
 });
+
+test('published GLB requests are cache-busted and retry once', async () => {
+  const assets = await readFile(new URL('../world/assets.js', import.meta.url), 'utf8');
+  assert.match(assets, /ASSET_VERSION='complete-hotel-3'/);
+  assert.match(assets, /attempt<2/);
+  assert.match(assets, /retry=\$\{Date\.now\(\)\}/);
+});
