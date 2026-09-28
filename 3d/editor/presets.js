@@ -41,4 +41,16 @@ export const PRESETS = Object.freeze({
       ['plant', -3.1, -3.1, 0], ['plant', 3.1, 3.1, 0],
     ],
   },
+  showcase: {
+    label: 'New Props Showcase',
+    objects: [
+      ['floor', 0, 0, 0, [3,1,2.5]],
+      ['wall', 0, 4.75, 0, [3,1,1]],
+      ['suitcase', -4.5, -3, 0], ['wardrobe', -2.6, -3, 0], ['minibar', -.6, -3, 0],
+      ['roomService', 1.5, -3, 0], ['housekeeping', 4, -3, 0],
+      ['velvetRope', -4, 0, 0], ['securityCamera', -3.5, 4.58, 0], ['roomPlaque', 0, 4.58, 0],
+      ['weatherMachine', 2.5, 0, 0], ['portalMirror', 4.7, .3, 0],
+      ['chandelier', -2, 2, 0], ['wallSconce', 3.5, 4.58, 0],
+    ],
+  },
 });

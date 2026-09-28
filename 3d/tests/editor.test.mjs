@@ -23,7 +23,7 @@ test('solid editor objects generate simple game collision', () => {
 });
 
 test('editor ships multiple editable room presets and an empty safe runtime layout', async () => {
-  assert.deepEqual(Object.keys(PRESETS), ['standardA','standardB','vip','lobby','hallway']);
+  assert.deepEqual(Object.keys(PRESETS), ['standardA','standardB','vip','lobby','hallway','showcase']);
   for (const preset of Object.values(PRESETS)) assert.ok(preset.objects.length >= 8);
   const layout = JSON.parse(await readFile(new URL('../data/custom-layout.json', import.meta.url), 'utf8'));
   assert.deepEqual(layout, { version: 1, name: 'Custom Hotel Additions', objects: [] });
@@ -51,4 +51,16 @@ test('professional editor includes history, versioning, diagnostics, GLB inspect
   assert.equal(CATALOG.pointLight.category, 'Lights');
   assert.equal(CATALOG.guestMarker.category, 'Characters');
   assert.ok(PRESETS.hallway.objects.length >= 8);
+});
+
+test('hotel prop batch provides efficient game-ready models across useful categories', () => {
+  const additions = ['suitcase','wardrobe','minibar','roomService','housekeeping','velvetRope','roomPlaque','securityCamera','weatherMachine','portalMirror','chandelier','wallSconce'];
+  for (const type of additions) {
+    assert.ok(CATALOG[type], `${type} must be available in the editor catalog`);
+    const root = createCatalogObject(type, { id:`batch-${type}`, type, floor:1, position:[0, CATALOG[type].offsetY || 0, 0], rotationY:0, scale:[1,1,1] });
+    let triangles = 0;
+    root.traverse((node) => { if (node.isMesh) triangles += node.geometry.index ? node.geometry.index.count / 3 : node.geometry.attributes.position.count / 3; });
+    assert.ok(triangles > 0 && triangles < 5000, `${type} should be visible and browser-efficient`);
+  }
+  assert.equal(PRESETS.showcase.objects.length, 14);
 });
