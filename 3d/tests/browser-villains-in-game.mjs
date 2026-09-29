@@ -16,9 +16,18 @@ for(let attempt=0;attempt<100&&!await evaluate('Boolean(window.__HOTEL_TEST__)')
 for(let attempt=0;attempt<100&&await evaluate("document.querySelector('#start').disabled");attempt++)await delay(100);
 await evaluate("document.querySelector('#start').click()");await delay(250);
 assert.equal(await evaluate('window.__HOTEL_TEST__.villainCount'),30);
-for(const [name,x,z,floor,file] of [['landlord',-11.1,-15.3,0,'preview-villain-in-game-lobby.png'],['uninvited',0,-3.4,2,'preview-villain-in-game-floor2.png'],['agent',0,9.5,3,'preview-villain-in-game-floor3.png']]){
-  await evaluate(`window.__HOTEL_TEST__.setPos(${x},${z},${floor});window.__HOTEL_TEST__.setYaw(0)`);await delay(500);
+const qualityGuests=[
+  ['mister-monday',-3.05,-4,0,-Math.PI/2,108,'preview-redesign-mister-monday-hotel.png'],
+  ['the-landlord',-11.1,-15.3,0,0,null,'preview-redesign-landlord-hotel.png'],
+  ['the-auditor',-3.05,8,2,-Math.PI/2,202,'preview-redesign-auditor-hotel.png'],
+  ['doctor-oops',3.05,8,3,Math.PI/2,301,'preview-redesign-doctor-oops-hotel.png'],
+  ['agent-awkward',0,9.5,3,0,null,'preview-redesign-agent-awkward-hotel.png'],
+];
+for(const [name,x,z,floor,yaw,room,file] of qualityGuests){
+  assert.ok(await evaluate(`Boolean(window.__HOTEL_TEST__.interactions['npc-${name}'])`),`${name} must be present in the hotel`);
+  if(room)await evaluate(`window.__HOTEL_TEST__.interact('room-${room}')`);
+  await evaluate(`window.__HOTEL_TEST__.setPos(${x},${z},${floor});window.__HOTEL_TEST__.setYaw(${yaw})`);await delay(500);
   const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   await writeFile(new URL(`../${file}`,import.meta.url),Buffer.from(shot.data,'base64'));
 }
-socket.close();console.log('In-game villain QA: PASS — 30 villains loaded and photographed on all three floors.');
+socket.close();console.log('In-game villain QA: PASS — 30 villains loaded; five redesigned guests photographed at hotel scale.');

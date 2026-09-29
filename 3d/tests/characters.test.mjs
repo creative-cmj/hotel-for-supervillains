@@ -25,6 +25,7 @@ for (let batch = 0; batch < 6; batch++) {
       const character = createVillainCharacter(villain);
       const report = inspectVillainCharacter(character);
       assert.deepEqual(report.missing, [], `${villain.name} has missing body parts`);
+      assert.deepEqual(report.jointGaps, [], `${villain.name} has disconnected body joints`);
       assert.ok(report.minY > -.2, `${villain.name} extends too far below its origin`);
       assert.ok(report.maxY < 4, `${villain.name} has unreasonable scale`);
       assert.ok(report.triangles > 300 && report.triangles < 10000, `${villain.name} needs visible but efficient geometry`);
