@@ -56,10 +56,9 @@ function floorForMesh(node, bounds) {
 }
 
 export async function loadWorldAssets(world, onStatus) {
-  const [hotel, manager, drizzle] = await Promise.all([
+  const [hotel, manager] = await Promise.all([
     load(assetUrl('grand_disaster_complete_asset_hotel.glb'), 'hotel structure', onStatus),
     load(assetUrl('grand_disaster_manager.glb'), 'manager', onStatus),
-    load(assetUrl('doctor_drizzle_final.glb'), 'guests', onStatus),
   ]);
   onStatus?.('Preparing rooms and collisions…');
   hotel.name = 'AUTHORITATIVE_POLISHED_HOTEL';
@@ -83,9 +82,7 @@ export async function loadWorldAssets(world, onStatus) {
   const managerBox = new THREE.Box3().setFromObject(manager);
   manager.position.y = -managerBox.min.y;
   world.avatar.add(manager);
-  const guestBox = new THREE.Box3().setFromObject(drizzle);
-  drizzle.position.y = -guestBox.min.y;
-  world.drizzle.add(drizzle);
+  // Room 307 keeps its mission trigger without loading a character model.
   world.drizzle.position.set(6.0, 9, -3.15);
 
   world.lift = requireNode(hotel, 'ELEVATOR_CAR_MOVABLE');
@@ -127,5 +124,5 @@ export async function loadWorldAssets(world, onStatus) {
   await loadEditableLayout(world, onStatus);
   world.setFloorVisibility(0);
   onStatus?.('Hotel ready');
-  return { hotel, manager, drizzle, phone, computer, weather, placement };
+  return { hotel, manager, phone, computer, weather, placement };
 }

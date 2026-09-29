@@ -2,7 +2,6 @@ import * as THREE from './vendor/three.module.js';
 import { createWorld, HOTEL_MAP_VERSION, FLOOR_HEIGHTS } from './world/scene.js';
 import { loadWorldAssets } from './world/assets.js?v=polished-hotel-1';
 import { updatePopulation } from './world/population.js';
-import { VILLAIN_ROSTER } from './characters/villain-roster.js';
 import { advancePlayer, collides } from './systems/player.js';
 import { findInteraction } from './systems/interaction.js';
 import { initialMission, transition } from './systems/mission.js';
@@ -245,22 +244,17 @@ function closeComputer() {
 
 function guestRows() {
   const active = activeRequestDefinition(mission);
-  const featured = [
+  return [
     `<article class="guest-profile"><div class="guest-crest">☁</div><div><small>ROOM 307 · WEATHER VILLAIN</small><h3>DOCTOR DRIZZLE</h3><p>Status: ${mission.step === 'computer' || mission.step === 'complete' ? 'Machine restored · Pleasantly grumpy' : 'Waiting for industrial battery'}</p></div></article>`,
     `<article class="guest-profile"><div class="guest-crest">ϟ</div><div><small>ROOM 205 · ELECTRICAL SPECIALIST</small><h3>VOLTESSA</h3><p>${active?.room === 205 ? 'Active request: Voltage Regulator' : 'Status: Enjoying the outlets'}</p></div></article>`,
     `<article class="guest-profile"><div class="guest-crest">❦</div><div><small>ROOM 303 · BOTANICAL VILLAIN</small><h3>THE BLOOM QUEEN</h3><p>${active?.room === 303 ? 'Active request: Containment Filter' : 'Status: Begonias contained'}</p></div></article>`,
-  ];
-  const roster = VILLAIN_ROSTER.slice(1).map((villain) => {
-    const current = active?.guest === villain.name;
-    return `<article class="guest-profile"><div class="guest-crest" style="color:#${villain.colors[1].toString(16).padStart(6,'0')}">${villain.name[0]}</div><div><small>ROOM ${villain.room} · ${villain.power.toUpperCase()}</small><h3>${villain.name.toUpperCase()}</h3><p>${current ? `Active request: ${villain.item}` : villain.personality}</p></div></article>`;
-  });
-  return [...featured,...roster].join('');
+  ].join('');
 }
 function renderOs() {
   const view = el('os-view');
   document.querySelectorAll('#computer nav button').forEach((button) => button.classList.toggle('active', button.dataset.tab === osTab));
   if (osTab === 'home') {
-    view.innerHTML = `<div class="os-title"><div><small>WELCOME BACK, MANAGER</small><h2>THE GRAND DISASTER</h2><p>Three floors online · 27 guest rooms accessible.</p></div><div class="os-icon">H</div></div><div class="os-grid"><article><small>HOTEL CASH</small><b>$${mission.cash.toLocaleString()}</b></article><article><small>REPUTATION</small><b>${mission.reputation}</b></article><article><small>MAYHEM</small><b>${mission.mayhem}%</b></article></div><div class="os-note">ACTIVE GUESTS <b>32</b><span>·</span>ACTIVE REQUESTS <b>${mission.request ? 1 : 0}</b><span>·</span>STAFF ON DUTY <b>5</b></div>`;
+    view.innerHTML = `<div class="os-title"><div><small>WELCOME BACK, MANAGER</small><h2>THE GRAND DISASTER</h2><p>Three floors online · 27 guest rooms accessible.</p></div><div class="os-icon">H</div></div><div class="os-grid"><article><small>HOTEL CASH</small><b>$${mission.cash.toLocaleString()}</b></article><article><small>REPUTATION</small><b>${mission.reputation}</b></article><article><small>MAYHEM</small><b>${mission.mayhem}%</b></article></div><div class="os-note">ACTIVE GUESTS <b>3</b><span>·</span>ACTIVE REQUESTS <b>${mission.request ? 1 : 0}</b><span>·</span>STAFF ON DUTY <b>4</b></div>`;
   } else if (osTab === 'guests') {
     view.innerHTML = `<div class="os-title"><div><small>RESIDENT DIRECTORY</small><h2>ACTIVE GUESTS</h2></div></div>${guestRows()}`;
   } else {
@@ -649,8 +643,6 @@ window.__HOTEL_TEST__ = debugEnabled ? {
   get roomCount() { return world.doors?.doors.size ?? 0; },
   get doorStates() { return Object.fromEntries([...(world.doors?.doors || [])].map(([number, door]) => [number, door.state])); },
   get populationCount() { return world.population?.length ?? 0; },
-  get villainCount() { return 1 + (world.population?.filter((entry) => entry.kind === 'villain').length ?? 0); },
-  get villainBounds() { const entries=(world.population||[]).filter((entry)=>entry.kind==='villain').map((entry)=>{const box=new THREE.Box3().setFromObject(entry.group);return {id:entry.data.id,floor:entry.data.floor,min:box.min.toArray(),max:box.max.toArray()};});const drizzleBox=new THREE.Box3().setFromObject(world.drizzle);entries.push({id:'doctor-drizzle',floor:3,min:drizzleBox.min.toArray(),max:drizzleBox.max.toArray()});return entries; },
   get cameraMode() { return 'first-person'; },
   get interactions() { return Object.fromEntries(world.objects.map((object) => [object.id, { x: object.position.x, y: object.position.y, z: object.position.z, action: object.action, number: object.number }])); },
   isBlocked: (x, z, floor = mission.floor) => collides(x, z, world.colliders[floor]),

@@ -1,5 +1,5 @@
 {
-  "asset": "Grand Disaster final interior and character asset handoff",
+  "asset": "Grand Disaster final interior and manager asset handoff",
   "coordinate_system": {
     "glb_up": "+Y",
     "glb_front": "+Z",
@@ -50,21 +50,6 @@
     "all_meshes_materialed": true,
     "all_mesh_scales_applied": true
   },
-  "doctor_drizzle": {
-    "file": "doctor_drizzle.glb",
-    "bytes": 80156,
-    "dimensions_xyz_m": [
-      1.355,
-      0.792,
-      2.37
-    ],
-    "mesh_objects": 1,
-    "vertices": 2112,
-    "triangles": 1020,
-    "room_theme_modules": 0,
-    "all_meshes_materialed": true,
-    "all_mesh_scales_applied": true
-  },
   "room_identities": {
     "301": "cold climate",
     "302": "technology",
@@ -79,5 +64,5 @@
   },
   "textures": [],
   "third_party_assets": [],
-  "rigging": "Static character models only; rig and animation requirements remain pending integration agreement."
+  "rigging": "The static manager model is unrigged; rig and animation requirements remain pending integration agreement."
 }

@@ -1,6 +1,4 @@
-import { VILLAIN_ROSTER } from '../characters/villain-roster.js';
-
-const coreRequests = [
+export const REQUEST_CATALOG = Object.freeze([
   {
     id: 'voltage-regulator',
     guest: 'Voltessa',
@@ -21,20 +19,7 @@ const coreRequests = [
     reward: 220,
     reputation: 3,
   },
-];
-
-const villainRequests = VILLAIN_ROSTER.filter((villain) => villain.id !== 'doctor-drizzle').map((villain,index) => ({
-  id: `guest-${villain.id}`,
-  guest: villain.name,
-  room: villain.room,
-  floor: Math.floor(villain.room/100),
-  item: villain.item,
-  request: villain.request,
-  reward: 145+(index%6)*25,
-  reputation: 1+(index%3),
-}));
-
-export const REQUEST_CATALOG = Object.freeze([...coreRequests,...villainRequests]);
+]);
 
 export function canOfferRequest(state, now = Date.now()) {
   return state.step === 'complete' && !state.request && now >= (state.nextRequestAt || 0);

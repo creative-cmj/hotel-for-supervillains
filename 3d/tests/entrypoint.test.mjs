@@ -12,15 +12,16 @@ test('public entrypoint opens the real 3D game and keeps classic playable', asyn
   assert.match(classic, /src="\.\.\/app\.js"/);
 });
 
-test('game loads the authoritative complete hotel and foot-level character assets', async () => {
+test('game loads the authoritative complete hotel and manager asset', async () => {
   const main = await read('../main.js');
   const assets = await read('../world/assets.js');
   assert.match(main, /loadWorldAssets\(world,\s*\(status\)/);
   assert.match(assets, /new URL\(`\.\.\/assets\/\$\{name\}`\s*,\s*import\.meta\.url\)/);
-  for (const file of ['grand_disaster_complete_asset_hotel.glb', 'grand_disaster_manager.glb', 'doctor_drizzle_final.glb']) {
+  for (const file of ['grand_disaster_complete_asset_hotel.glb', 'grand_disaster_manager.glb']) {
     assert.match(assets, new RegExp(`assetUrl\\('${file.replace('.', '\\.')}\\'\\)`));
     assert.ok((await stat(new URL(`../assets/${file}`, import.meta.url))).size > 1000, `${file} must be a real local GLB`);
   }
+  assert.doesNotMatch(assets, /doctor_drizzle_final\.glb/);
   assert.match(assets, /ROOM_307_BATTERY_PLACEMENT/);
   assert.match(assets, /ROOM_307_WEATHER_MACHINE_VISUAL/);
 });

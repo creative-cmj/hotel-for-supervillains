@@ -44,20 +44,8 @@ The browser test uses real keyboard and interaction events for movement, the Fir
 
 ## Scope
 
-This pass completes the repaired three-floor environment and establishes repeatable hotel work for the full villain roster. It is still an early playable hotel rather than the final simulator: staff have ambient dialogue but no schedules, and upgrades, emergencies, deeper stories, and richer room-specific activities remain future work. The full product and art direction remains locked in [`DESIGN_LOCK.md`](DESIGN_LOCK.md). The old shift-management experience remains playable at `classic/`.
+This pass completes the repaired three-floor environment and establishes the first repeatable hotel-work loop. It is still an early playable hotel rather than the final simulator: staff have ambient dialogue but no schedules, only two repeatable guest requests exist, and upgrades, emergencies, deeper stories, and richer room-specific activities remain future work. The full product and art direction remains locked in [`DESIGN_LOCK.md`](DESIGN_LOCK.md). The old shift-management experience remains playable at `classic/`.
 
 The editable Blender post-process, exported GLB, build script, verification report, dimensions, triangle count, and licensing notes are in [`assets/polished_hotel/`](assets/polished_hotel/).
 
 Three.js is MIT licensed; its original license is included in `3d/vendor/THREE_LICENSE.txt`.
-
-## Villain character roster
-
-The roster viewer at `http://127.0.0.1:4180/3d/characters.html` contains all 30 original villains. Each character is driven by its individual source prompt in `assets/villain-roster/prompts/`, uses prompt-authored scale and proportions, and has neutral-gray and black-silhouette inspection support.
-
-Individual game-ready GLBs and their machine-readable manifest are in `assets/villain-roster/glb/`. Rebuild and verify all character exports with:
-
-```bash
-npm run build:characters --prefix 3d
-```
-
-See `assets/villain-roster/PRODUCTION_OVERVIEW.md` for the full production matrix and `assets/villain-roster/qa/` for the cast inspection sheets.

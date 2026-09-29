@@ -14,8 +14,6 @@ FULL_BLEND = os.path.join(ROOT, "grand_disaster_complete_asset_hotel.blend")
 FULL_GLB = os.path.join(ROOT, "grand_disaster_complete_asset_hotel.glb")
 MANAGER_BLEND = os.path.join(ROOT, "grand_disaster_manager.blend")
 MANAGER_GLB = os.path.join(ROOT, "grand_disaster_manager.glb")
-DRIZZLE_BLEND = os.path.join(ROOT, "doctor_drizzle.blend")
-DRIZZLE_GLB = os.path.join(ROOT, "doctor_drizzle.glb")
 REPORT = os.path.join(ROOT, "verification.json")
 PREVIEWS = os.path.join(ROOT, "previews")
 
@@ -507,26 +505,22 @@ def build():
     assert full_stats["all_meshes_materialed"] and full_stats["all_mesh_scales_applied"]
     build_character("GRAND_DISASTER_MANAGER", MANAGER_BLEND, MANAGER_GLB, False)
     manager_stats = model_stats(MANAGER_GLB)
-    build_character("DOCTOR_DRIZZLE", DRIZZLE_BLEND, DRIZZLE_GLB, True)
-    drizzle_stats = model_stats(DRIZZLE_GLB)
-    assert manager_stats["all_meshes_materialed"] and drizzle_stats["all_meshes_materialed"]
+    assert manager_stats["all_meshes_materialed"]
     report = {
-        "asset": "Grand Disaster final interior and character asset handoff",
+        "asset": "Grand Disaster final interior and manager asset handoff",
         "coordinate_system": {"glb_up": "+Y", "glb_front": "+Z", "units": "meters"},
         "interior_pack": pack_stats,
         "complete_hotel": full_stats,
         "manager": manager_stats,
-        "doctor_drizzle": drizzle_stats,
         "room_identities": {"301": "cold climate", "302": "technology", "303": "botanical", "304": "luxury flexible", "305": "reinforced", "306": "acoustic illusion", "307": "weather instruments", "308": "containment", "309": "gravity cosmic", "310": "high security"},
         "textures": [],
         "third_party_assets": [],
-        "rigging": "Static character models only; rig and animation requirements remain pending integration agreement."
+        "rigging": "The static manager model is unrigged; rig and animation requirements remain pending integration agreement."
     }
     with open(REPORT, "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
     render_hotel_previews()
     render_character(MANAGER_GLB, "manager_character.png", (1.0, 0.55, 0.30))
-    render_character(DRIZZLE_GLB, "doctor_drizzle_character.png", (0.42, 0.68, 1.0))
     print("FINAL_ASSET_PACK_VERIFIED", json.dumps({"pack_triangles": pack_stats["triangles"], "hotel_triangles": full_stats["triangles"], "room_modules": pack_stats["room_theme_modules"]}))
 
 

@@ -60,8 +60,7 @@ for (let i = 0; i < 50 && !await evaluate('Boolean(window.__HOTEL_TEST__)'); i++
 assert.ok(await evaluate('Boolean(window.__HOTEL_TEST__)'), '3D game failed to boot');
 for (let i = 0; i < 50 && await evaluate("document.querySelector('#start').disabled"); i++) await delay(250);
 assert.equal(await evaluate('window.__HOTEL_TEST__.roomCount'), 27);
-assert.equal(await evaluate('window.__HOTEL_TEST__.populationCount'), 36);
-assert.equal(await evaluate('window.__HOTEL_TEST__.villainCount'), 30);
+assert.equal(await evaluate('window.__HOTEL_TEST__.populationCount'), 7);
 assert.equal(await evaluate('window.__HOTEL_TEST__.cameraMode'), 'first-person');
 assert.equal(await evaluate("document.querySelector('#loading-status').textContent"), '27 guest rooms · 3 floors · Hotel ready');
 await evaluate("document.querySelector('#start').click()");
