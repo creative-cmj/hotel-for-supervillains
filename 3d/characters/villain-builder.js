@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
+import { NORMAL_GUEST_HEIGHT, VILLAIN_PRODUCTION_SPECS } from './villain-production-specs.js';
 
 const materialCache = new Map();
 const geometryCache = new Map();
@@ -18,6 +19,17 @@ const coneGeo = (r,h,segments=10) => geometry(`cone-${r}-${h}-${segments}`, () =
 const torusGeo = (r,tube) => geometry(`torus-${r}-${tube}`, () => new THREE.TorusGeometry(r,tube,8,20));
 const octaGeo = (r) => geometry(`octa-${r}`, () => new THREE.OctahedronGeometry(r));
 const dodecaGeo = (r) => geometry(`dodeca-${r}`, () => new THREE.DodecahedronGeometry(r,0));
+const capsuleGeo = (r,h) => geometry(`capsule-${r}-${h}`, () => new THREE.CapsuleGeometry(r,Math.max(.01,h-r*.5),4,8));
+const shoeGeo = (w,h,l) => geometry(`shoe-${w}-${h}-${l}`, () => {const result=new THREE.CapsuleGeometry(.5,.7,3,8);result.scale(w,h,l/1.7);result.rotateX(Math.PI/2);return result;});
+const torsoGeo = (style='tailored') => geometry(`torso-profile-${style}`,()=>{
+  const profiles={
+    tailored:[[-.5,.72],[-.42,.84],[-.18,.72],[.08,.66],[.34,.9],[.5,.78]],
+    athletic:[[-.5,.55],[-.35,.66],[0,.72],[.35,1],[.5,1.08]],
+    pear:[[-.5,1],[-.3,1.05],[.05,.82],[.35,.7],[.5,.62]],
+    wedge:[[-.5,.72],[-.3,.78],[.05,.88],[.35,1.05],[.5,1.18]],
+  };
+  return new THREE.LatheGeometry((profiles[style]||profiles.tailored).map(([y,x])=>new THREE.Vector2(x,y)),12);
+});
 
 function mesh(group, geo, material, name, position=[0,0,0], scale=[1,1,1], rotation=[0,0,0]) {
   const result = new THREE.Mesh(geo, material);
@@ -33,7 +45,7 @@ function mesh(group, geo, material, name, position=[0,0,0], scale=[1,1,1], rotat
 function limb(group, name, from, to, radius, material) {
   const start = new THREE.Vector3(...from), end = new THREE.Vector3(...to);
   const center = start.clone().add(end).multiplyScalar(.5);
-  const result = mesh(group, cylinderGeo(radius,radius,start.distanceTo(end)+radius*.55,10), material, name, center.toArray());
+  const result = mesh(group, capsuleGeo(radius,start.distanceTo(end)), material, name, center.toArray());
   result.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), end.clone().sub(start).normalize());
   return result;
 }
@@ -43,15 +55,11 @@ function proportions(archetype) {
   };
   return map[archetype] || map.average;
 }
-const characterProportionOverrides = Object.freeze({
-  'mister-monday': { torsoW:.92,torsoH:.62,depth:.58,head:.37,leg:.42 },
-  'the-landlord': { torsoW:1.16,torsoH:.98,depth:.62,head:.29,leg:.38 },
-  'the-auditor': { torsoW:.46,torsoH:1.05,depth:.3,head:.23,leg:.88 },
-  'doctor-oops': { torsoW:.46,torsoH:.48,depth:.36,head:.47,leg:.3 },
-  'agent-awkward': { torsoW:.58,torsoH:.88,depth:.38,head:.25,leg:.8 },
-});
+const characterProportionOverrides = Object.freeze({});
 function characterProportions(definition) {
-  return { ...proportions(definition.archetype), ...(characterProportionOverrides[definition.id] || {}) };
+  const spec=VILLAIN_PRODUCTION_SPECS[definition.id],base={...proportions(spec?.archetype||definition.archetype)};
+  if(spec){base.torsoW=.58*spec.shoulderRatio;base.head=spec.headRatio;base.height=NORMAL_GUEST_HEIGHT*spec.scale;}
+  return { ...base, ...(characterProportionOverrides[definition.id] || {}) };
 }
 function headGeometry(shape, radius) {
   if (['square','block','tiny','split'].includes(shape)) return boxGeo(radius*1.65,radius*1.55,radius*1.5);
@@ -106,6 +114,10 @@ function addFace(group, definition, center, radius, faceDepth, skinMat) {
     case 'lost': leftScale=[1.4,1.35,.4];rightScale=[.72,.72,.4];mouthRot=-.2;break;
     case 'unimpressed': leftScale=rightScale=[1.12,.3,.4];mouthW*=.75;break;
     case 'worried': leftScale=rightScale=[1.18,1.28,.4];mouthRot=.12;break;
+    case 'angry': leftScale=rightScale=[.72,.58,.36];mouthW*=.82;break;
+    case 'stern': leftScale=rightScale=[.82,.68,.36];mouthW*=.82;break;
+    case 'nervous': leftScale=[1.18,1.3,.4];rightScale=[.88,1.08,.4];mouthRot=-.12;break;
+    case 'coldSmile': leftScale=rightScale=[.82,.42,.36];mouthW*=.9;break;
     case 'mismatched': leftScale=[.7,1.3,.4];rightScale=[1.4,.55,.4];pupilRX=radius*.08;break;
     case 'maniac': leftScale=rightScale=[1.4,1.4,.4];mouthW*=1.25;break;
     case 'evilHappy': leftScale=rightScale=[.9,.9,.4];mouthW*=1.2;break;
@@ -129,19 +141,9 @@ function addFace(group, definition, center, radius, faceDepth, skinMat) {
     const brow=mesh(face,boxGeo(radius*(definition.id==='the-landlord'?.48:.34),radius*.045,radius*.04),dark,`BROW_${side<0?'L':'R'}`,[side*radius*.33,eyeY+radius*(definition.id==='agent-awkward'&&side<0?.42:.28),-radius*.12]);brow.rotation.z=side*specialTilt;
   }
   if(definition.id==='mister-monday') for(const side of [-1,1]) mesh(face,torusGeo(radius*.18,radius*.025),mat(0x70505b,0,.82),`EYE_BAG_${side<0?'L':'R'}`,[side*radius*.34,eyeY-radius*.1,-radius*.12],[1,.42,.3],[0,0,0]);
-  if(definition.id==='the-landlord') {
-    for(const side of [-1,1]) addGlassesFrame(face,side*radius*.31,eyeY,radius*.46,radius*.3,radius*.035,dark,`GLASSES_${side<0?'L':'R'}`);
-    boxAccessory(face,[radius*.2,radius*.035,radius*.04],[0,eyeY,-radius*.18],dark,'GLASSES_BRIDGE');
-    mesh(face,coneGeo(radius*.14,radius*.25,6),skinMat,'NOSE',[0,-radius*.04,-radius*.18],[1,1,1],[Math.PI/2,0,0]);
-  }
-  if(definition.id==='the-auditor') {
-    for(const side of [-1,1]) addGlassesFrame(face,side*radius*.3,eyeY,radius*.38,radius*.25,radius*.035,dark,`ANGULAR_GLASSES_${side<0?'L':'R'}`);
-    boxAccessory(face,[radius*.17,radius*.035,radius*.04],[0,eyeY,-radius*.18],dark,'GLASSES_BRIDGE');
-  }
-  if(definition.id==='doctor-oops') for(const side of [-1,1]) torus(face,radius*(side<0?.27:.19),radius*.045,[side*radius*.32,eyeY,-radius*.2],accentForFace(definition),'GOGGLE',[0,0,0]);
-  if(definition.id==='doctor-oops') sphere(face,radius*.075,[radius*.34,eyeY,-radius*.27],mat(0x15111c,0,.35,0x4c1849),'MECHANICAL_LENS');
-  if(definition.id==='doctor-oops') for(const rotation of [-.7,.7]) mesh(face,boxGeo(radius*.28,radius*.035,radius*.04),accentForFace(definition),'BROKEN_LENS',[-radius*.34,eyeY,-radius*.27],[1,1,1],[0,0,rotation]);
   if(definition.id==='agent-awkward') mesh(face,boxGeo(mouthW*.65,radius*.12,radius*.06),white,'AWKWARD_TEETH',[0,mouthY+.015,-radius*.06],[1,.75,1],[0,0,mouthRot]);
+  if(definition.id==='doctor-drizzle')mesh(face,boxGeo(mouthW*.72,radius*.09,radius*.06),white,'VICTORIOUS_GRIN',[0,mouthY+.015,-radius*.06]);
+  if(definition.id==='the-landlord')for(const side of [-1,1]){const smile=mesh(face,boxGeo(radius*.24,radius*.045,radius*.04),mouthMat,`COLD_SMILE_${side}`,[side*radius*.17,mouthY-radius*.025,-radius*.05]);smile.rotation.z=side*.16;}
   return face;
 }
 function accentForFace(definition){return mat(definition.colors[2],.45,.3);}
@@ -199,28 +201,21 @@ function addAccessory(group, definition, p, headY, materials) {
 function addQualityDetails(group,definition,p,anchors,materials){
   const [primary,secondary,accent,skin]=materials;const {hipY,torsoY,shoulderY,headY,front}=anchors;
   if(definition.id==='mister-monday'){
-    mesh(group,sphereGeo(.5),secondary,'OVERSIZED_HOODIE',[0,torsoY-.05,.05],[p.torsoW*1.12,p.torsoH*.98,p.depth*1.18]);
-    torus(group,p.head*.72,.09,[0,headY-p.head*.64,-.01],primary,'SLOUCH_COLLAR',[Math.PI/2,0,0]);
-    for(const side of [-1,1])boxAccessory(group,[p.torsoW*.42,p.torsoH*.58,.08],[side*p.torsoW*.23,hipY-.03,p.depth*.56],primary,`COAT_TAIL_${side}`);
-    boxAccessory(group,[.1,.5,.025],[.05,torsoY-.05,front-.04],accent,'LOOSE_TIE');
+    mesh(group,cylinderGeo(p.torsoW*.46,p.torsoW*.58,p.torsoH*.84,12),primary,'OFFICE_JACKET',[0,torsoY-.03,.02]);
+    boxAccessory(group,[.1,.38,.025],[.03,torsoY+.02,front-.04],secondary,'LOOSE_COLLAR');
+    for(const [index,y] of [[0,-.15],[1,.08]]){const wrinkle=boxAccessory(group,[p.torsoW*.42,.025,.025],[0,torsoY+y,front-.05],secondary,`SCULPTED_WRINKLE_${index}`);wrinkle.rotation.z=index?-.12:.1;}
   }
   if(definition.id==='the-landlord'){
-    boxAccessory(group,[p.torsoW*1.08,p.torsoH*1.04,p.depth*1.06],[0,torsoY,.02],primary,'CARDIGAN_BLOCK');
-    for(const side of [-1,1])boxAccessory(group,[p.torsoW*.16,p.torsoH*.82,.035],[side*p.torsoW*.23,torsoY,front-.04],secondary,`CARDIGAN_LAPEL_${side}`);
-    for(let index=0;index<4;index++)sphere(group,.035,[0,hipY+.15+index*.18,front-.08],accent,`CARDIGAN_BUTTON_${index}`);
-    for(let index=0;index<4;index++)boxAccessory(group,[.64-index*.04,.035,.34],[0,shoulderY-.1+index*.055,p.depth*.8],index%2?skin:accent,`CONTRACT_STACK_${index}`);
+    mesh(group,cylinderGeo(p.torsoW*.5,p.torsoW*.56,p.torsoH*.9,8),primary,'OLIVE_BLAZER',[0,torsoY,.02]);
+    for(const side of [-1,1])mesh(group,coneGeo(p.torsoW*.18,p.torsoH*.62,4),secondary,`BLAZER_LAPEL_${side}`,[side*p.torsoW*.2,torsoY+.08,front-.04],[1,1,.24],[0,0,side*.12]);
   }
   if(definition.id==='the-auditor'){
-    boxAccessory(group,[p.torsoW*1.45,p.torsoH*1.42,.09],[0,torsoY-.12,p.depth*.64],primary,'LEDGER_CAPE');
-    for(const side of [-1,1])mesh(group,coneGeo(.12,.42,4),accent,`PEN_SHOULDER_${side}`,[side*p.torsoW*.7,shoulderY+.06,0],[1,1,1],[0,0,side*.72]);
-    boxAccessory(group,[p.torsoW*.9,.05,.035],[0,torsoY+.16,front-.05],skin,'PINSTRIPE_1');
-    boxAccessory(group,[p.torsoW*.9,.05,.035],[0,torsoY-.13,front-.05],skin,'PINSTRIPE_2');
+    mesh(group,cylinderGeo(p.torsoW*.45,p.torsoW*.5,p.torsoH*.92,8),primary,'SUIT_JACKET',[0,torsoY,.02]);
+    boxAccessory(group,[.065,p.torsoH*.54,.025],[0,torsoY+.03,front-.04],accent,'SLIM_RED_TIE');
   }
   if(definition.id==='doctor-oops'){
-    for(const side of [-1,1])boxAccessory(group,[p.torsoW*.45,p.torsoH*.7,.055],[side*p.torsoW*.23,hipY+.02,p.depth*.55],skin,`LAB_COAT_TAIL_${side}`);
-    for(const y of [shoulderY-.12,shoulderY-.4])torus(group,.17,.035,[p.torsoW*.75,y,0],accent,'MECH_ARM_RING',[Math.PI/2,0,0]);
-    torus(group,p.head*.82,.055,[0,headY+.02,-p.head*.76],secondary,'GIANT_GOGGLE_STRAP',[0,0,0]);
-    for(let index=0;index<3;index++)boxAccessory(group,[.08,.22,.06],[-p.torsoW*.44+index*.12,hipY+.28,front-.04],accent,`TOOL_${index}`);
+    mesh(group,cylinderGeo(p.torsoW*.44,p.torsoW*.56,p.torsoH*.95,10),primary,'MINT_LAB_COAT',[0,torsoY-.02,.02]);
+    for(const side of [-1,1])mesh(group,coneGeo(p.torsoW*.17,p.torsoH*.55,4),side<0?primary:accent,`CROOKED_COLLAR_${side}`,[side*p.torsoW*.18,torsoY+.17,front-.04],[1,1,.2],[0,0,side*(side<0?.28:.08)]);
   }
   if(definition.id==='agent-awkward'){
     mesh(group,cylinderGeo(p.torsoW*.34,p.torsoW*.78,p.torsoH*1.18,4),primary,'TRENCH_COAT',[0,hipY+p.torsoH*.35,.04]);
@@ -229,12 +224,78 @@ function addQualityDetails(group,definition,p,anchors,materials){
     limb(group,'EARPIECE_WIRE',[p.head*.72,headY-.03,-p.head*.5],[p.torsoW*.38,shoulderY-.25,front],.012,accent);
   }
 }
+
+function addPromptDesign(group,definition,p,anchors,materials){
+  const [primary,secondary,accent,skin]=materials;const {hipY,torsoY,shoulderY,headY,front}=anchors;const handX=p.torsoW*.62,handY=shoulderY-.77,top=headY+p.head*.92;
+  const hair=mat(0x29212a,0,.72);
+  const cap=([sx,sy,sz]=[1,.45,.85],offset=[0,p.head*.56,p.head*.2],name='SCULPTED_HAIR')=>mesh(group,sphereGeo(p.head*.9),hair,name,[offset[0],headY+offset[1],offset[2]],sx?[sx,sy,sz]:[1,.45,.85]);
+  const heldBox=(size,side=-1,name='HELD_PROP',material=accent,offset=[0,0,0])=>boxAccessory(group,size,[side*handX+offset[0],handY+offset[1],front+offset[2]],material,name);
+  if(!['sir-sludge','general-glitch','king-concrete','final-boss'].includes(definition.id))cap(definition.id==='lady-luxury'?[1.2,1.15,.95]:definition.id==='madame-vine'?[1.05,.8,.65]:[1,.42,.86]);
+  if(definition.id==='captain-combustion')for(let i=0;i<3;i++){const quiff=mesh(group,coneGeo(.1,.42+i*.07,7),hair,`QUIFF_${i}`,[(i-1)*.12,top+.1+i*.04,.08],[1,1,1],[0,0,-.55-i*.08]);quiff.position.y-=i*.03;}
+  if(definition.id==='professor-freezerburn')mesh(group,coneGeo(.16,.42,7),accent,'ICE_HAIR_CREST',[0,top+.13,.04],[1,1,.7],[0,0,-.28]);
+  if(definition.id==='professor-kaboom')mesh(group,coneGeo(.13,.52,7),secondary,'SOOT_HAIR_TUFT',[0,top+.17,.03],[1,1,.8],[0,0,-.2]);
+  if(definition.id==='madame-vine')mesh(group,coneGeo(p.head*.72,p.head*1.5,5),primary,'LEAF_HAIR',[0,top+.06,.12],[1,1,.45],[0,0,-.38]);
+  if(definition.id==='doctor-bubble')for(const side of [-1,1])mesh(group,coneGeo(.07,.25,6),hair,`HAIR_TUFT_${side}`,[side*.09,top+.08,.03],[1,1,1],[0,0,side*.3]);
+  if(definition.id==='doctor-oops')mesh(group,coneGeo(.07,.25,6),hair,'COWLICK',[.08,top+.08,.02],[1,1,1],[0,0,-.42]);
+  const longCoatIds=new Set(['doctor-drizzle','lord-side-eye','count-confusion','mister-midnight','lady-luxury','captain-coupon','uninvited-guest','agent-awkward']);
+  const beltedIds=new Set(['doctor-drizzle','professor-nap','agent-awkward']);
+  if(longCoatIds.has(definition.id)&&!['agent-awkward'].includes(definition.id)){
+    mesh(group,cylinderGeo(p.torsoW*.42,p.torsoW*.62,p.torsoH*.86,10),primary,'TAILORED_COAT',[0,torsoY-.08,.015]);
+    for(const side of [-1,1])mesh(group,coneGeo(p.torsoW*.13,p.torsoH*.45,4),secondary,`LAPEL_${side}`,[side*p.torsoW*.16,torsoY+.13,front-.035],[1,1,.18],[0,0,side*.17]);
+  }
+  if(beltedIds.has(definition.id))cylinder(group,p.torsoW*.47,.075,[0,hipY+.18,.01],secondary,'WRAPPED_BELT');
+  if(definition.id==='madame-vine'||definition.id==='lady-luxury')mesh(group,cylinderGeo(p.torsoW*.28,p.torsoW*.58,p.torsoH*.75,12),secondary,'FITTED_SKIRT',[0,hipY+.12,.01]);
+  if(definition.id==='professor-nap')mesh(group,cylinderGeo(p.torsoW*.45,p.torsoW*.58,p.torsoH*.88,12),primary,'PAJAMA_ROBE',[0,torsoY-.05,.02]);
+  if(definition.id==='dj-doom')mesh(group,cylinderGeo(p.torsoW*.52,p.torsoW*.58,p.torsoH*.48,12),primary,'CROPPED_BOMBER',[0,torsoY+.16,.02]);
+  if(definition.id==='chef-catastrophe')cylinder(group,p.torsoW*.5,.1,[0,hipY+.18,.01],secondary,'APRON_WAIST');
+  if(definition.id==='king-concrete')mesh(group,cylinderGeo(p.torsoW*.47,p.torsoW*.54,p.torsoH*.75,6),accent,'UTILITY_VEST',[0,torsoY+.04,.02]);
+  switch(definition.signature){
+    case 'weatherDial':{const dial=cylinder(group,.16,.07,[-handX,handY,front],accent,'WEATHER_DIAL');dial.rotation.x=Math.PI/2;limb(group,'DIAL_HANDLE',[-handX,handY+.02,front],[-handX,handY-.25,front],.035,secondary);break;}
+    case 'iceScraper':heldBox([.22,.08,.035],-1,'ICE_SCRAPER_BLADE',accent,[0,.08,-.04]);limb(group,'SCRAPER_HANDLE',[-handX,handY+.04,front],[-handX,handY-.22,front],.03,secondary);break;
+    case 'extinguisher':cylinder(group,.09,.35,[-handX,hipY+.18,front],accent,'BELT_EXTINGUISHER');torus(group,.07,.018,[-handX,hipY+.38,front],secondary,'EXTINGUISHER_HANDLE',[0,0,0]);break;
+    case 'batteryCane':limb(group,'BATTERY_CANE',[-handX,handY+.04,front],[-handX,.18,front],.055,secondary);cylinder(group,.1,.28,[-handX,.43,front],accent,'CANE_CELL');break;
+    case 'pruningShears':for(const side of [-1,1]){const blade=mesh(group,coneGeo(.055,.3,6),accent,`SHEAR_BLADE_${side}`,[-handX,handY+.13,front],[1,1,.4],[0,0,side*.42]);}for(const side of [-1,1])torus(group,.07,.018,[-handX+side*.065,handY-.08,front],secondary,`SHEAR_GRIP_${side}`,[0,0,0]);break;
+    case 'tablet':heldBox([.34,.46,.045],-1,'BUFFERING_TABLET',accent,[0,.12,-.04]);for(let i=0;i<5;i++)boxAccessory(group,[.035,.09,.02],[-handX+(i-2)*.05,handY+.12,front-.07],skin,`LOADING_BAR_${i}`);break;
+    case 'detonator':heldBox([.28,.24,.2],0,'PLUNGER_BASE',secondary,[0,0,-.02]);limb(group,'PLUNGER',[0,handY+.1,front],[0,handY+.38,front],.035,accent);sphere(group,.07,[0,handY+.42,front],accent,'PLUNGER_TOP');break;
+    case 'umbrellaCane':limb(group,'UMBRELLA_CANE',[-handX,handY+.05,front],[-handX,.12,front],.035,accent);torus(group,.11,.025,[-handX+.08,handY+.09,front],accent,'UMBRELLA_HANDLE',[0,0,0]);mesh(group,coneGeo(.08,.18,8),accent,'UMBRELLA_TIP',[-handX,.07,front]);break;
+    case 'coffeeCup':cylinder(group,.1,.27,[-handX,handY,front],accent,'TAKEAWAY_CUP');cylinder(group,.115,.035,[-handX,handY+.15,front],secondary,'CUP_LID');break;
+    case 'brassKey':torus(group,.095,.022,[-handX,handY+.06,front],accent,'KEY_RING',[0,0,0]);limb(group,'KEY_SHAFT',[-handX,handY,front],[-handX,handY-.27,front],.026,accent);heldBox([.16,.07,.035],-1,'KEY_TOOTH',accent,[.06,-.27,0]);break;
+    case 'spoonSword':limb(group,'SPOON_HANDLE',[-handX,handY+.04,front],[-handX,handY+.5,front],.035,accent);mesh(group,sphereGeo(.13),accent,'SPOON_BOWL',[-handX,handY+.61,front],[.6,1,.3]);break;
+    case 'stageWand':limb(group,'STAGE_WAND',[-handX,handY,front],[-handX,handY+.5,front],.027,secondary);cylinder(group,p.head*.72,.36,[0,top+.17,0],primary,'TOP_HAT');cylinder(group,p.head,.05,[0,top,0],secondary,'HAT_BRIM');break;
+    case 'ledger':heldBox([.34,.62,.12],-1,'CLAMPED_LEDGER',secondary,[p.torsoW*.14,.18,.08]);break;
+    case 'gravityDial':{const dial=cylinder(group,.17,.065,[0,hipY+.24,front-.03],accent,'GRAVITY_DIAL');dial.rotation.x=Math.PI/2;for(const side of [-1,1]){const orb=sphere(group,.065,[side*.3,hipY+.28,front],secondary,`INTENTIONAL_FLOAT_ORB_${side}`);orb.userData.intentionalFloat=true;}break;}
+    case 'headphones':torus(group,p.head*1.02,.055,[0,headY+.08,0],accent,'HEADPHONE_BAND',[0,0,0]);for(const side of [-1,1])boxAccessory(group,[.13,.26,.14],[side*p.head*.85,headY+.02,0],accent,`EARPHONE_${side}`);break;
+    case 'sandTimer':heldBox([.18,.34,.08],1,'FOREARM_SAND_TIMER',accent,[0,.22,-.03]);for(const y of [-.12,.12])cylinder(group,.11,.035,[handX,handY+.22+y,front-.04],secondary,'TIMER_CAP');break;
+    case 'commandBracer':heldBox([.26,.34,.12],1,'COMMAND_BRACER',accent,[0,.2,-.02]);break;
+    case 'lantern':limb(group,'LANTERN_HANDLE',[-handX,handY+.05,front],[-handX,handY+.29,front],.025,accent);heldBox([.22,.3,.18],-1,'UNLIT_LANTERN',accent,[0,-.18,0]);break;
+    case 'gemCane':limb(group,'GEM_CANE',[-handX,handY+.04,front],[-handX,.12,front],.035,accent);mesh(group,octaGeo(.14),secondary,'CANE_GEM',[-handX,handY+.12,front]);break;
+    case 'bentRayGun':{limb(group,'RAY_GUN_GRIP',[-handX,handY,front],[-handX,handY+.2,front],.035,secondary);const barrel=limb(group,'BENT_RAY_GUN',[-handX,handY+.2,front],[-handX+.22,handY+.38,front-.04],.065,accent);barrel.rotation.z+=.12;break;}
+    case 'pigeon':{const bird=sphere(group,.15,[p.torsoW*.58,shoulderY+.19,0],secondary,'ATTACHED_PIGEON');mesh(group,coneGeo(.055,.16,5),accent,'PIGEON_BEAK',[p.torsoW*.68,shoulderY+.19,-.12],[1,1,1],[Math.PI/2,0,0]);for(const x of [-.035,.035])limb(group,'PIGEON_FOOT',[p.torsoW*.58+x,shoulderY+.08,0],[p.torsoW*.58+x,shoulderY-.01,0],.012,accent);break;}
+    case 'spatula':limb(group,'SPATULA_HANDLE',[-handX,handY,front],[-handX,handY+.48,front],.04,secondary);heldBox([.25,.34,.04],-1,'SPATULA_HEAD',secondary,[0,.63,0]);break;
+    case 'coupon':heldBox([.5,.32,.035],-1,'OVERSIZED_COUPON',accent,[p.torsoW*.18,.15,-.03]);torus(group,.08,.02,[-handX+p.torsoW*.18,handY+.15,front-.07],secondary,'DISCOUNT_SYMBOL',[0,0,0]);break;
+    case 'keycard':heldBox([.42,.62,.035],0,'OVERSIZED_KEYCARD',accent,[0,.42,-.1]);break;
+    case 'pillow':heldBox([.62,.4,.2],-1,'TUCKED_PILLOW',accent,[p.torsoW*.1,.18,.06]);break;
+    case 'magnetGauntlet':torus(group,.19,.065,[handX,handY+.18,front],accent,'MAGNET_GAUNTLET',[0,0,0]);for(const [i,pos] of [[0,[handX+.28,handY+.28,front]],[1,[handX+.35,handY+.12,front]],[2,[handX+.25,handY-.04,front]]]){const obj=i===2?torus(group,.05,.015,pos,secondary,`INTENTIONAL_FLOAT_${i}`,[0,0,0]):heldBox(i===0?[.04,.16,.04]:[.12,.05,.035],1,`INTENTIONAL_FLOAT_${i}`,secondary,[pos[0]-handX,pos[1]-handY,pos[2]-front]);obj.userData.intentionalFloat=true;}break;
+    case 'bubbleWand':torus(group,.2,.025,[-handX,handY+.35,front],accent,'BUBBLE_WAND',[0,0,0]);limb(group,'WAND_HANDLE',[-handX,handY+.19,front],[-handX,handY-.15,front],.028,secondary);break;
+    case 'permitPlaque':heldBox([.34,.24,.045],0,'BOLTED_PERMIT_PLAQUE',secondary,[0,torsoY-handY,-.05]);for(const x of [-.13,.13])sphere(group,.018,[x,torsoY+.08,front-.08],accent,'PLAQUE_BOLT');break;
+    case 'earpiece':boxAccessory(group,[.045,.16,.055],[p.head*.74,headY+.01,-p.head*.54],accent,'SEATED_EARPIECE');break;
+    case 'tinyClipboard':heldBox([.18,.25,.035],-1,'TINY_CLIPBOARD',accent,[0,.06,-.02]);break;
+  }
+  if(definition.id==='professor-freezerburn')torus(group,p.head*.95,.12,[0,headY-.02,0],primary,'PARKA_COLLAR',[0,0,0]);
+  if(definition.id==='pigeon-king')addCape(group,p,primary,.95);
+  if(definition.id==='chef-catastrophe'){cylinder(group,p.head*.65,.3,[0,top+.08,0],accent,'CHEF_HAT_BAND');for(const x of [-.14,0,.14])sphere(group,.18,[x,top+.3,0],accent,'ATTACHED_HAT_PUFF');}
+  if(definition.id==='pigeon-king')for(let i=-1;i<=1;i++)mesh(group,coneGeo(.055,.2,5),accent,'CROWN_RIDGE',[i*.09,top+.1,0]);
+  if(definition.id==='king-concrete')for(let i=-2;i<=2;i++)boxAccessory(group,[.07,.17,.12],[i*.1,top+.05,0],skin,'STONE_CROWN_RIDGE');
+  if(definition.id==='final-boss')mesh(group,cylinderGeo(p.torsoW*.42,p.torsoW*.67,p.torsoH*.95,6),primary,'FITTED_ARMORED_COAT',[0,torsoY,.02]);
+}
 function boxAccessory(group,size,position,material,name){return mesh(group,boxGeo(...size),material,name,position);}
 function sphere(group,r,position,material,name='SPHERE'){return mesh(group,sphereGeo(r),material,name,position);}
 function cylinder(group,r,h,position,material,name='CYLINDER'){return mesh(group,cylinderGeo(r,r,h,10),material,name,position);}
 function torus(group,r,tube,position,material,name='TORUS',rotation=[Math.PI/2,0,0]){return mesh(group,torusGeo(r,tube),material,name,position,[1,1,1],rotation);}
 
-export function createVillainCharacter(definition, options = {}) {
+export function createVillainCharacter(sourceDefinition, options = {}) {
+  const spec=VILLAIN_PRODUCTION_SPECS[sourceDefinition.id]||{};
+  const definition={...sourceDefinition,...spec,colors:spec.colors||sourceDefinition.colors};
   const p=characterProportions(definition);
   const group=new THREE.Group();group.name=`VILLAIN_${definition.id.toUpperCase()}`;group.userData.villain=definition;
   const primary=mat(definition.colors[0],definition.archetype==='armored'||definition.archetype==='boss' ? .45 : .08,.48);
@@ -245,8 +306,10 @@ export function createVillainCharacter(definition, options = {}) {
   const hipY=.32+p.leg;
   const torsoY=hipY+p.torsoH*.46;
   const squareTorso=['the-landlord','the-auditor','agent-awkward'].includes(definition.id);
-  const torsoGeo = definition.archetype==='rock'?dodecaGeo(.6):definition.archetype==='slime'?sphereGeo(.55):definition.archetype==='boss'||definition.archetype==='armored'||definition.archetype==='blocky'||squareTorso?boxGeo(1,1,1):sphereGeo(.5);
-  const torso=mesh(group,torsoGeo,primary,'TORSO',[0,torsoY,0],[p.torsoW/(definition.archetype==='rock'?.95:1),p.torsoH/(definition.archetype==='slime'?.9:1),p.depth/.5]);
+  const profile=['round','slime','barrel','soft','bubble'].includes(definition.archetype)?'pear':['athletic','broad','armored'].includes(definition.archetype)?'athletic':['boss','rock'].includes(definition.archetype)?'wedge':'tailored';
+  const bodyGeometry=definition.archetype==='rock'?dodecaGeo(.6):definition.archetype==='asymmetric'||squareTorso?boxGeo(1,1,1):torsoGeo(profile);
+  const torsoScale=definition.archetype==='rock'?[p.torsoW/.95,p.torsoH,p.depth/.5]:definition.archetype==='asymmetric'||squareTorso?[p.torsoW,p.torsoH,p.depth/.5]:[p.torsoW*.5,p.torsoH,p.depth*.5];
+  const torso=mesh(group,bodyGeometry,primary,'TORSO',[0,torsoY,0],torsoScale);
   mesh(group,cylinderGeo(p.torsoW*.46,p.torsoW*.5,.18,10),accent,'HIPS',[0,hipY,0]);
   const legSpread=p.torsoW*.24;
   for(const side of [-1,1]){
@@ -254,8 +317,9 @@ export function createVillainCharacter(definition, options = {}) {
     const hip=[side*legSpread,hipY-.03,0],knee=[side*legSpread*(awkward?1.35:.95),.34+p.leg*.48,awkward?-.05:side*.015],ankle=[side*legSpread*(awkward?.72:1),.18,.015];
     limb(group,`LEG_${side<0?'L':'R'}_UPPER`,hip,knee,definition.archetype==='rock'?.15:.105,primary);
     limb(group,`LEG_${side<0?'L':'R'}_LOWER`,knee,ankle,definition.archetype==='rock'?.14:.095,secondary);
-    const footSize=definition.id==='mister-monday'?[.38,.16,.5]:definition.id==='doctor-oops'?[.36,.22,.52]:definition.id==='agent-awkward'?[.24,.16,.54]:[.26,.18,.42];
-    mesh(group,definition.archetype==='rock'?dodecaGeo(.18):boxGeo(...footSize),definition.archetype==='rock'?skin:accent,`FOOT_${side<0?'L':'R'}`,[ankle[0],footSize[1]*.5,-.1]);
+    sphere(group,definition.archetype==='rock'?.16:.11,knee,secondary,`KNEE_${side<0?'L':'R'}_JOINT`);
+    const footSize=definition.id==='king-concrete'||definition.id==='final-boss'?[.4,.2,.5]:definition.id==='professor-kaboom'?[.28,.17,.38]:[.28,.17,.42];
+    mesh(group,definition.archetype==='rock'?dodecaGeo(.18):shoeGeo(...footSize),definition.archetype==='rock'?skin:accent,`FOOT_${side<0?'L':'R'}`,[ankle[0],footSize[1]*.5,-.1]);
   }
   const shoulderY=hipY+p.torsoH*.78, shoulderX=p.torsoW*.52;
   const armEntries=[];
@@ -263,10 +327,14 @@ export function createVillainCharacter(definition, options = {}) {
     let shoulder=[side*shoulderX,shoulderY,0],elbow=[side*(shoulderX+.12),shoulderY-.4,definition.archetype==='lopsided'&&side>0?.12:0],wrist=[side*(shoulderX+.08),shoulderY-.72,-.02];
     if(definition.id==='mister-monday'){shoulder=[side*shoulderX,shoulderY-.12,-.05];elbow=[side*(shoulderX+.2),shoulderY-.38,-.12];wrist=[side*(shoulderX+.12),shoulderY-.66,-.15];}
     if(definition.id==='doctor-oops'&&side>0){elbow=[side*(shoulderX+.27),shoulderY-.26,.02];wrist=[side*(shoulderX+.3),shoulderY-.68,-.08];}
-    if(definition.id==='agent-awkward'&&side<0){elbow=[side*(shoulderX+.24),shoulderY-.25,-.08];wrist=[.14,shoulderY-.43,-.43];}
+    if(definition.id==='professor-kaboom'){elbow=[side*(shoulderX+.08),shoulderY-.3,-.08];wrist=[side*.16,shoulderY-.68,-.32];}
+    if(definition.id==='uninvited-guest'&&side<0){elbow=[side*(shoulderX+.16),shoulderY-.24,-.1];wrist=[-.12,shoulderY-.45,-.42];}
+    if(definition.id==='agent-awkward'){elbow=[side*(shoulderX+.18),shoulderY-.24,-.08];wrist=[side*.1,shoulderY-.43,-.43];}
     const customArm=definition.id==='doctor-oops'&&side>0;
     const upper=limb(group,`ARM_${side<0?'L':'R'}_UPPER`,shoulder,elbow,customArm?.15:definition.archetype==='boss'||definition.archetype==='rock'?.16:.095,customArm?accent:primary);
     const lower=limb(group,`ARM_${side<0?'L':'R'}_LOWER`,elbow,wrist,customArm?.14:definition.archetype==='boss'||definition.archetype==='rock'?.145:.085,customArm?secondary:secondary);
+    sphere(group,customArm?.15:definition.archetype==='boss'||definition.archetype==='rock'?.17:.105,shoulder,primary,`SHOULDER_${side<0?'L':'R'}_JOINT`);
+    sphere(group,customArm?.14:definition.archetype==='boss'||definition.archetype==='rock'?.15:.095,elbow,secondary,`ELBOW_${side<0?'L':'R'}_JOINT`);
     const hand=makeHand(group,side,[wrist[0],wrist[1]-.08,wrist[2]],definition.handStyle,skin,accent);
     armEntries.push({side,upper,lower,hand});
   }
@@ -282,22 +350,26 @@ export function createVillainCharacter(definition, options = {}) {
   if(definition.id==='agent-awkward')headScale=[.88,1.3,.86];
   const head=mesh(group,headGeometry(definition.headShape,p.head),skin,'HEAD',[0,headY,headForward],headScale);
   addFace(group,definition,[0,headY,headForward],p.head,p.head*.72,skin);
-  if(['cape','hooded','regal','faceless','boss'].includes(definition.archetype)) addCape(group,p,secondary,definition.archetype==='boss'?1.4:1.1);
+  if(['cape','hooded'].includes(definition.archetype)) addCape(group,p,secondary,1.1);
   if(definition.archetype==='floating'){const robe=mesh(group,coneGeo(p.torsoW*.72,p.leg+.35,12),primary,'FLOATING_ROBE',[0,(p.leg+.35)/2,0]);robe.rotation.y=Math.PI;}
   if(definition.archetype==='slime') for(const side of [-1,1])sphere(group,.19,[side*.27,.13,0],primary,`SLIME_FOOT_${side}`);
-  addAccessory(group,definition,p,headY,[primary,secondary,accent,skin]);
   addQualityDetails(group,definition,p,{hipY,torsoY,shoulderY,headY,front:-p.depth*.7},[primary,secondary,accent,skin]);
+  addPromptDesign(group,definition,p,{hipY,torsoY,shoulderY,headY,front:-p.depth*.7},[primary,secondary,accent,skin]);
   group.userData.parts={head,torso,arms:armEntries};
-  group.userData.baseScale=options.scale || 1;
-  group.scale.setScalar(options.scale || 1);
+  group.updateMatrixWorld(true);
+  const rawBounds=new THREE.Box3().setFromObject(group),rawHeight=Math.max(.001,rawBounds.max.y-rawBounds.min.y),productionScale=(NORMAL_GUEST_HEIGHT*(spec.scale||1))/rawHeight;
+  for(const child of group.children)child.position.y-=rawBounds.min.y;
+  group.userData.baseScale=productionScale*(options.scale||1);
+  group.userData.productionSpec=spec;
+  group.scale.setScalar(group.userData.baseScale);
   return group;
 }
 
 export function inspectVillainCharacter(group) {
   const required=['HEAD','NECK','TORSO','HIPS','ARM_L_UPPER','ARM_L_LOWER','HAND_L','ARM_R_UPPER','ARM_R_LOWER','HAND_R','LEG_L_UPPER','LEG_L_LOWER','FOOT_L','LEG_R_UPPER','LEG_R_LOWER','FOOT_R','FACE'];
   const missing=required.filter((name)=>!group.getObjectByName(name));
-  let meshes=0,triangles=0;
-  group.traverse((node)=>{if(!node.isMesh)return;meshes++;triangles+=node.geometry.index?node.geometry.index.count/3:(node.geometry.attributes.position?.count||0)/3;});
+  let meshes=0,triangles=0,intentionalFloatCount=0;
+  group.traverse((node)=>{if(node.userData.intentionalFloat)intentionalFloatCount++;if(!node.isMesh)return;meshes++;triangles+=node.geometry.index?node.geometry.index.count/3:(node.geometry.attributes.position?.count||0)/3;});
   const bounds=new THREE.Box3().setFromObject(group),size=bounds.getSize(new THREE.Vector3());
   const pairs=[['HEAD','NECK'],['NECK','TORSO'],['TORSO','HIPS'],...['L','R'].flatMap((side)=>[[`TORSO`,`ARM_${side}_UPPER`],[`ARM_${side}_UPPER`,`ARM_${side}_LOWER`],[`ARM_${side}_LOWER`,`HAND_${side}`],[`HIPS`,`LEG_${side}_UPPER`],[`LEG_${side}_UPPER`,`LEG_${side}_LOWER`],[`LEG_${side}_LOWER`,`FOOT_${side}`]])];
   const jointGaps=[];
@@ -307,7 +379,7 @@ export function inspectVillainCharacter(group) {
     const dx=Math.max(0,a.min.x-b.max.x,b.min.x-a.max.x),dy=Math.max(0,a.min.y-b.max.y,b.min.y-a.max.y),dz=Math.max(0,a.min.z-b.max.z,b.min.z-a.max.z);
     const gap=Math.hypot(dx,dy,dz);if(gap>.045)jointGaps.push({joint:`${firstName}→${secondName}`,gap:Number(gap.toFixed(3))});
   }
-  return {missing,jointGaps,meshes,triangles:Math.round(triangles),dimensions:size.toArray().map((value)=>Number(value.toFixed(3))),minY:Number(bounds.min.y.toFixed(3)),maxY:Number(bounds.max.y.toFixed(3))};
+  return {missing,jointGaps,intentionalFloatCount,meshes,triangles:Math.round(triangles),dimensions:size.toArray().map((value)=>Number(value.toFixed(3))),minY:Number(bounds.min.y.toFixed(3)),maxY:Number(bounds.max.y.toFixed(3))};
 }
 
 export function updateVillainCharacter(entry, player, elapsed) {

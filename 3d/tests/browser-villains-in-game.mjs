@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
+import { VILLAIN_ROSTER } from '../characters/villain-roster.js';
 const endpoint=process.env.CDP_ENDPOINT??'http://127.0.0.1:9231';
 const targets=await(await fetch(`${endpoint}/json`)).json();
 const target=targets.find((entry)=>entry.type==='page'&&entry.url.includes('127.0.0.1:4180'));
@@ -16,6 +17,9 @@ for(let attempt=0;attempt<100&&!await evaluate('Boolean(window.__HOTEL_TEST__)')
 for(let attempt=0;attempt<100&&await evaluate("document.querySelector('#start').disabled");attempt++)await delay(100);
 await evaluate("document.querySelector('#start').click()");await delay(250);
 assert.equal(await evaluate('window.__HOTEL_TEST__.villainCount'),30);
+for(const villain of VILLAIN_ROSTER)assert.ok(await evaluate(`Boolean(window.__HOTEL_TEST__.interactions['${villain.id==='doctor-drizzle'?'drizzle':`npc-${villain.id}`}'])`),`${villain.name} must have an in-hotel interaction`);
+const bounds=JSON.parse(await evaluate('JSON.stringify(window.__HOTEL_TEST__.villainBounds)'));assert.equal(bounds.length,30);
+for(const entry of bounds){const floorY=entry.floor===0?0:entry.floor===2?4.5:9;assert.ok(entry.min[1]>=floorY-.02,`${entry.id} must stand on its floor`);assert.ok(entry.max[1]-floorY<2.85,`${entry.id} must clear hotel door height`);assert.ok(entry.max[0]-entry.min[0]<2.5,`${entry.id} must clear hallway width`);}
 const qualityGuests=[
   ['mister-monday',-3.05,-4,0,-Math.PI/2,108,'preview-redesign-mister-monday-hotel.png'],
   ['the-landlord',-11.1,-15.3,0,0,null,'preview-redesign-landlord-hotel.png'],
@@ -30,4 +34,4 @@ for(const [name,x,z,floor,yaw,room,file] of qualityGuests){
   const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   await writeFile(new URL(`../${file}`,import.meta.url),Buffer.from(shot.data,'base64'));
 }
-socket.close();console.log('In-game villain QA: PASS — 30 villains loaded; five redesigned guests photographed at hotel scale.');
+socket.close();console.log('In-game villain QA: PASS — all 30 villains have interactions, stand on their floor, clear doors/hallways, and five are photographed in rooms/public space.');

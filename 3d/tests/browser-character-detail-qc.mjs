@@ -20,7 +20,7 @@ await call('Page.navigate',{url:`http://127.0.0.1:4180/3d/characters.html?detail
 for(let attempt=0;attempt<100&&!await evaluate('Boolean(window.__VILLAIN_ROSTER_TEST__)');attempt++)await delay(100);
 assert.equal(await evaluate('window.__VILLAIN_ROSTER_TEST__.entries.length'),30);
 await evaluate('window.__VILLAIN_ROSTER_TEST__.pauseAnimations(true)');
-const views=[['front',0,.25,3.8],['right',Math.PI/2,.25,3.8],['back',Math.PI,.25,3.8],['left',-Math.PI/2,.25,3.8],['above',0,1.05,4.5],['low',0,.06,4.1]];
+const views=[['front',0,.25,3.8],['front-three-quarter',Math.PI/4,.25,3.8],['right',Math.PI/2,.25,3.8],['back-three-quarter',Math.PI*3/4,.25,3.8],['back',Math.PI,.25,3.8],['left',-Math.PI/2,.25,3.8],['above',0,1.05,4.5],['low',0,.06,4.1]];
 for(const index of indices){
   await evaluate(`window.__VILLAIN_ROSTER_TEST__.isolate(${index})`);
   const slug=await evaluate(`window.__VILLAIN_ROSTER_TEST__.entries[${index}].data.id`);
@@ -32,11 +32,14 @@ for(const index of indices){
   await evaluate(`window.__VILLAIN_ROSTER_TEST__.setSilhouette(true);window.__VILLAIN_ROSTER_TEST__.selectEntry(window.__VILLAIN_ROSTER_TEST__.entries[${index}]);window.__VILLAIN_ROSTER_TEST__.setCamera(0,.25,3.8)`);await delay(45);
   let shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   await writeFile(new URL(`${String(index+1).padStart(2,'0')}-${slug}-silhouette.png`,output),Buffer.from(shot.data,'base64'));
-  await evaluate(`window.__VILLAIN_ROSTER_TEST__.setSilhouette(false);(()=>{const e=window.__VILLAIN_ROSTER_TEST__.entries[${index}],p=e.group.position;window.__VILLAIN_ROSTER_TEST__.setTarget(p.x,e.report.maxY-.28,p.z);window.__VILLAIN_ROSTER_TEST__.setCamera(0,0,1.35)})()`);await delay(45);
+  await evaluate(`window.__VILLAIN_ROSTER_TEST__.setSilhouette(false);window.__VILLAIN_ROSTER_TEST__.setNeutralGray(true);window.__VILLAIN_ROSTER_TEST__.selectEntry(window.__VILLAIN_ROSTER_TEST__.entries[${index}]);window.__VILLAIN_ROSTER_TEST__.setCamera(0,.25,3.8)`);await delay(45);
+  shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  await writeFile(new URL(`${String(index+1).padStart(2,'0')}-${slug}-neutral-gray.png`,output),Buffer.from(shot.data,'base64'));
+  await evaluate(`window.__VILLAIN_ROSTER_TEST__.setNeutralGray(false);(()=>{const e=window.__VILLAIN_ROSTER_TEST__.entries[${index}],p=e.group.position;window.__VILLAIN_ROSTER_TEST__.setTarget(p.x,e.report.maxY-.28,p.z);window.__VILLAIN_ROSTER_TEST__.setCamera(0,0,1.35)})()`);await delay(45);
   shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   await writeFile(new URL(`${String(index+1).padStart(2,'0')}-${slug}-face.png`,output),Buffer.from(shot.data,'base64'));
   await evaluate(`(()=>{const e=window.__VILLAIN_ROSTER_TEST__.entries[${index}],p=e.group.position;window.__VILLAIN_ROSTER_TEST__.setTarget(p.x,e.report.maxY*.42,p.z);window.__VILLAIN_ROSTER_TEST__.setCamera(0,0,2.1)})()`);await delay(45);
   shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   await writeFile(new URL(`${String(index+1).padStart(2,'0')}-${slug}-hands.png`,output),Buffer.from(shot.data,'base64'));
 }
-socket.close();console.log(`Detailed character QC capture: PASS — ${indices.length} villains × 9 inspection views (${label}).`);
+socket.close();console.log(`Detailed character QC capture: PASS — ${indices.length} villains × 12 inspection views (${label}).`);

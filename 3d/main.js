@@ -650,6 +650,7 @@ window.__HOTEL_TEST__ = debugEnabled ? {
   get doorStates() { return Object.fromEntries([...(world.doors?.doors || [])].map(([number, door]) => [number, door.state])); },
   get populationCount() { return world.population?.length ?? 0; },
   get villainCount() { return 1 + (world.population?.filter((entry) => entry.kind === 'villain').length ?? 0); },
+  get villainBounds() { const entries=(world.population||[]).filter((entry)=>entry.kind==='villain').map((entry)=>{const box=new THREE.Box3().setFromObject(entry.group);return {id:entry.data.id,floor:entry.data.floor,min:box.min.toArray(),max:box.max.toArray()};});const drizzleBox=new THREE.Box3().setFromObject(world.drizzle);entries.push({id:'doctor-drizzle',floor:3,min:drizzleBox.min.toArray(),max:drizzleBox.max.toArray()});return entries; },
   get cameraMode() { return 'first-person'; },
   get interactions() { return Object.fromEntries(world.objects.map((object) => [object.id, { x: object.position.x, y: object.position.y, z: object.position.z, action: object.action, number: object.number }])); },
   isBlocked: (x, z, floor = mission.floor) => collides(x, z, world.colliders[floor]),

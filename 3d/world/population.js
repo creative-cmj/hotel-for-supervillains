@@ -60,7 +60,7 @@ export function createPopulation(world) {
   const entries=[];
   for(const data of HOTEL_STAFF) registerPopulationEntry(world,data,createStaffCharacter(data),entries,'staff');
   for(const data of VILLAIN_PLACEMENTS) {
-    const group=createVillainCharacter(data,{scale:.86});
+    const group=createVillainCharacter(data);
     registerPopulationEntry(world,data,group,entries,'villain');
   }
   world.population=entries;
