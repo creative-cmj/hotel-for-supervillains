@@ -1,0 +1,31 @@
+number,name,slug,height_m,triangles,meshes,materials,animations,nodes,file_bytes,blend,glb
+1,Queuejack,01-queuejack,,21880,80,6,2,98,632900,blend/01-queuejack.blend,glb/01-queuejack.glb
+2,Knickknack,02-knickknack,,19384,73,6,2,91,566364,blend/02-knickknack.blend,glb/02-knickknack.glb
+3,Mrs Mute,03-mrs-mute,,19524,73,6,2,91,572176,blend/03-mrs-mute.blend,glb/03-mrs-mute.glb
+4,Patchwork Pete,04-patchwork-pete,,17648,74,6,2,92,521972,blend/04-patchwork-pete.blend,glb/04-patchwork-pete.glb
+5,Lady Backspace,05-lady-backspace,,18204,71,5,2,89,524912,blend/05-lady-backspace.blend,glb/05-lady-backspace.glb
+6,Rubberneck,06-rubberneck,,20244,73,6,2,91,580052,blend/06-rubberneck.blend,glb/06-rubberneck.glb
+7,Puffet,07-puffet,,19096,72,6,2,90,549656,blend/07-puffet.blend,glb/07-puffet.glb
+8,Mr Halfway,08-mr-halfway,,19132,71,6,2,89,561368,blend/08-mr-halfway.blend,glb/08-mr-halfway.glb
+9,Drape Escape,09-drape-escape,,19888,71,6,2,89,574520,blend/09-drape-escape.blend,glb/09-drape-escape.glb
+10,Clockwise Clyde,10-clockwise-clyde,,19196,71,6,2,89,562328,blend/10-clockwise-clyde.blend,glb/10-clockwise-clyde.glb
+11,Checkmate Charlie,11-checkmate-charlie,,18140,76,6,2,94,537644,blend/11-checkmate-charlie.blend,glb/11-checkmate-charlie.glb
+12,Wrongway,12-wrongway,,18220,71,6,2,89,539236,blend/12-wrongway.blend,glb/12-wrongway.glb
+13,Inky Dink,13-inky-dink,,19212,71,6,2,89,560580,blend/13-inky-dink.blend,glb/13-inky-dink.glb
+14,Pogo Gloom,14-pogo-gloom,,19500,72,6,2,90,564108,blend/14-pogo-gloom.blend,glb/14-pogo-gloom.glb
+15,Bravo Brio,15-bravo-brio,,18376,77,6,2,95,545792,blend/15-bravo-brio.blend,glb/15-bravo-brio.glb
+16,Mothball,16-mothball,,20100,76,6,2,94,582216,blend/16-mothball.blend,glb/16-mothball.glb
+17,Hiccup Hex,17-hiccup-hex,,19848,72,6,2,90,578676,blend/17-hiccup-hex.blend,glb/17-hiccup-hex.glb
+18,Captain Courtesy,18-captain-courtesy,,18764,76,6,2,94,557768,blend/18-captain-courtesy.blend,glb/18-captain-courtesy.glb
+19,The Tangle,19-the-tangle,,19840,71,6,2,89,577024,blend/19-the-tangle.blend,glb/19-the-tangle.glb
+20,Plush Pummeler,20-plush-pummeler,,18804,72,6,2,90,548448,blend/20-plush-pummeler.blend,glb/20-plush-pummeler.glb
+21,Tomorrow,21-tomorrow,,19900,72,6,2,90,578212,blend/21-tomorrow.blend,glb/21-tomorrow.glb
+22,The Gap,22-the-gap,,19700,74,6,2,92,575340,blend/22-the-gap.blend,glb/22-the-gap.glb
+23,Airmail,23-airmail,,18128,73,6,2,91,532512,blend/23-airmail.blend,glb/23-airmail.glb
+24,Mister Replay,24-mister-replay,,18784,72,6,2,90,554972,blend/24-mister-replay.blend,glb/24-mister-replay.glb
+25,Crateface,25-crateface,,18616,73,6,2,91,546404,blend/25-crateface.blend,glb/25-crateface.glb
+26,Nudge,26-nudge,,18232,72,6,2,90,537988,blend/26-nudge.blend,glb/26-nudge.glb
+27,Miss Encore,27-miss-encore,,20476,72,6,2,90,589756,blend/27-miss-encore.blend,glb/27-miss-encore.glb
+28,Speed Bump,28-speed-bump,,17812,73,6,2,91,525216,blend/28-speed-bump.blend,glb/28-speed-bump.glb
+29,Lattice,29-lattice,,18400,72,6,2,90,542636,blend/29-lattice.blend,glb/29-lattice.glb
+30,Nightlight,30-nightlight,,19040,72,7,2,90,555132,blend/30-nightlight.blend,glb/30-nightlight.glb
