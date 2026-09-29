@@ -25,13 +25,17 @@ test('solid editor objects generate simple game collision', () => {
 test('editor ships multiple editable room presets and an empty safe runtime layout', async () => {
   assert.deepEqual(Object.keys(PRESETS), ['standardA','standardB','vip','lobby','hallway','showcase']);
   for (const preset of Object.values(PRESETS)) assert.ok(preset.objects.length >= 8);
+  for (const [name, preset] of Object.entries(PRESETS)) {
+    for (const [type] of preset.objects) assert.ok(CATALOG[type], `${name} references missing ${type}`);
+  }
+  assert.ok(PRESETS.lobby.objects.some(([type]) => type === 'reception'), 'lobby starter must contain the reception desk it promises');
   const layout = JSON.parse(await readFile(new URL('../data/custom-layout.json', import.meta.url), 'utf8'));
   assert.deepEqual(layout, { version: 1, name: 'Custom Hotel Additions', objects: [] });
 });
 
 test('visual editor exposes floor, transform, preset, save, import, and export controls', async () => {
   const html = await readFile(new URL('../editor.html', import.meta.url), 'utf8');
-  for (const id of ['floors','palette','palette-search','asset-categories','presets','object-list','outliner-search','object-x','object-z','object-y','object-r','object-sx','object-sy','object-sz','duplicate','delete','undo','redo','zoom-in','zoom-out','reset-view','camera-speed','transform-space','show-collisions','scene-stats','history-list','action-log','play-test','save-browser','load-browser','restore-auto','export-json','import-json','import-model']) {
+  for (const id of ['project-state','floors','preset-x','preset-z','preset-view-center','palette','palette-search','asset-categories','presets','object-list','outliner-search','object-x','object-z','object-y','object-r','object-sx','object-sy','object-sz','duplicate','delete','undo','redo','zoom-in','zoom-out','reset-view','camera-speed','transform-space','show-collisions','scene-stats','history-list','version-picker','action-log','play-test','quick-save','quick-test','shortcut-help','shortcut-dialog','toolbar-help','save-browser','load-browser','restore-auto','export-json','import-json','import-model']) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
   }
 });

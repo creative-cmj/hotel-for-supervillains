@@ -24,9 +24,10 @@ export const PRESETS = Object.freeze({
     ],
   },
   lobby: {
-    label: 'Lobby Seating',
+    label: 'Lobby Seating & Desk',
     objects: [
-      ['floor', 0, 0, 0, [2.5,1,2]], ['sofa', -2, 0, 90], ['sofa', 2, 0, -90], ['table', 0, 0, 0],
+      ['floor', 0, 0, 0, [2.5,1,2]], ['reception', 0, -2.5, 0],
+      ['sofa', -2.5, .7, 90], ['sofa', 2.5, .7, -90], ['table', 0, 1, 0],
       ['plant', -3.6, -2.6, 0], ['plant', 3.6, 2.6, 0], ['luggage', 0, 3, 0], ['sign', 0, -3.8, 0],
     ],
   },

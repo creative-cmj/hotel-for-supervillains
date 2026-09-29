@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Grand Disaster · No-Blender Hotel Editor</title>
-  <link rel="stylesheet" href="editor.css">
+  <link rel="stylesheet" href="editor.css?v=20260929">
 </head>
 <body>
   <aside id="sidebar">
@@ -12,6 +12,7 @@
       <div class="eyebrow">THE GRAND DISASTER</div>
       <h1>Hotel Builder</h1>
       <p>Build with reusable pieces. No Blender required.</p>
+      <div id="project-state" aria-live="polite">Floor 1 · 0 objects · Autosave on</div>
     </header>
 
     <section>
@@ -20,6 +21,28 @@
         <button data-floor="1" class="active">1 · Lobby</button>
         <button data-floor="2">2 · Guest</button>
         <button data-floor="3">3 · VIP</button>
+      </div>
+    </section>
+
+    <section class="quick-start">
+      <div class="section-title"><h2>Quick start</h2><span>START HERE</span></div>
+      <p class="help">Pick a ready-made section, then move or replace any piece.</p>
+      <div class="placement-row">
+        <label>Place at X <input id="preset-x" type="number" step="0.5" value="0"></label>
+        <label>Place at Z <input id="preset-z" type="number" step="0.5" value="0"></label>
+        <button id="preset-view-center" type="button" title="Use the center of the current view">View center</button>
+      </div>
+      <p class="help placement-help">After adding a section, the X position advances 12 m so the next one stays clear.</p>
+      <div class="quick-grid">
+        <button data-quick-preset="lobby"><b>Lobby</b><small>Front desk starter</small></button>
+        <button data-quick-preset="standardA"><b>Guest room</b><small>Editable room</small></button>
+        <button data-quick-preset="hallway"><b>Hallway</b><small>Walls and doors</small></button>
+        <button data-quick-preset="vip"><b>VIP suite</b><small>Large room starter</small></button>
+      </div>
+      <div class="row quick-actions">
+        <button id="quick-save">Save now</button>
+        <button id="quick-test">Walk test</button>
+        <button id="shortcut-help">Controls</button>
       </div>
     </section>
 
@@ -36,7 +59,7 @@
       <p class="help">Presets are editable starting points, not locked models.</p>
     </section>
 
-    <section id="selection-panel">
+    <section id="outliner-panel">
       <div class="section-title"><h2>Objects on this floor</h2><span id="object-count">0</span></div>
       <input id="outliner-search" type="search" placeholder="Search scene…" aria-label="Search scene objects">
       <div id="object-list"></div>
@@ -130,8 +153,9 @@
       <div id="history-list" class="log-list"></div>
       <div class="row wrap">
         <button id="save-version">Save Version</button>
-        <button id="restore-version">Restore Latest</button>
+        <button id="restore-version">Restore Selected</button>
       </div>
+      <label class="version-label">Saved versions <select id="version-picker" aria-label="Saved versions"><option value="">No versions saved</option></select></label>
     </section>
 
     <section>
@@ -177,6 +201,7 @@
       <button id="zoom-in">＋</button>
       <button id="zoom-out">−</button>
       <button id="reset-view">Reset</button>
+      <button id="toolbar-help" title="Keyboard and mouse controls (?)">? Help</button>
       <label>Snap <select id="snap"><option value=".25">0.25 m</option><option value=".5" selected>0.5 m</option><option value="1">1 m</option></select></label>
       <label>Speed <select id="camera-speed"><option value="4">Slow</option><option value="8" selected>Normal</option><option value="16">Fast</option><option value="28">Very fast</option></select></label>
       <label>Space <select id="transform-space"><option value="world">World</option><option value="local">Local</option></select></label>
@@ -185,6 +210,25 @@
     <div id="help">WASD camera · wheel zoom · right-drag orbit · middle-drag pan · left-drag object · F focus · Ctrl+Z undo</div>
   </main>
 
-  <script type="module" src="editor.js"></script>
+  <dialog id="shortcut-dialog" aria-labelledby="shortcut-title">
+    <div class="dialog-heading"><div><div class="eyebrow">HOTEL BUILDER</div><h2 id="shortcut-title">Controls</h2></div><button id="close-shortcuts" aria-label="Close controls">×</button></div>
+    <div class="shortcut-grid">
+      <div><kbd>W A S D</kbd><span>Move camera</span></div>
+      <div><kbd>Mouse wheel</kbd><span>Zoom in or out</span></div>
+      <div><kbd>Right drag</kbd><span>Orbit camera</span></div>
+      <div><kbd>Middle drag</kbd><span>Pan camera</span></div>
+      <div><kbd>Left drag</kbd><span>Move selected object</span></div>
+      <div><kbd>F</kbd><span>Focus selection</span></div>
+      <div><kbd>G / R / Alt+S</kbd><span>Move, rotate, or scale</span></div>
+      <div><kbd>Ctrl+D</kbd><span>Duplicate selection</span></div>
+      <div><kbd>Ctrl+Z / Ctrl+Y</kbd><span>Undo or redo</span></div>
+      <div><kbd>Ctrl+S</kbd><span>Save browser draft</span></div>
+      <div><kbd>/</kbd><span>Search assets</span></div>
+      <div><kbd>Delete</kbd><span>Delete selection</span></div>
+    </div>
+    <p class="help">Tip: start with a preset, double-click an outliner item to focus it, then press Play-test to walk the space at player height.</p>
+  </dialog>
+
+  <script type="module" src="editor.js?v=20260929c"></script>
 </body>
 </html>

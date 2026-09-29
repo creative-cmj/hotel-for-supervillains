@@ -21,15 +21,15 @@ Do not open the HTML files directly from Explorer. The local server is required 
 
 1. Select **Floor 1**, **Floor 2**, or **Floor 3**.
 2. Add individual walls, floors, furniture, signs, hotel props, or villain-tech pieces.
-3. Alternatively, add **Standard Room A**, **Standard Room B**, **VIP Room**, or **Lobby Seating** as an editable starting point.
+3. Or use **Quick start** for a lobby desk, guest room, hallway, or VIP suite. Set the X/Z placement fields first; after adding a section, X advances 12 m so the next one does not overlap. **View center** uses the current camera target. More presets are available below the asset browser.
 4. Click an object in the 3D view.
 5. Move the camera with W/A/S/D. Hold Shift to move faster.
 6. Zoom with the mouse wheel, rotate with right-drag, and pan with middle-drag. Use **Reset** if you lose the room.
 7. Move the selected object with the arrow keys or exact X/Z fields.
-8. Rotate the selected object with Q/E or the Rotation field.
+8. Rotate the selected object with the Rotate toolbar tool or the Rotation field.
 9. Use Page Up/Page Down for object height.
 10. Press Ctrl+D to duplicate or Delete to remove.
-11. Use **Save Draft** while working. This stores a private draft in that browser.
+11. Work is autosaved in this browser and restored when you reopen the builder. Use **Save now** or **Save Draft** for a separate draft, and **Save Version** for a named restore point. Choose a version from **Saved versions** before pressing **Restore Selected**. You can undo a restore.
 12. Use **Download JSON** when the layout is ready.
 
 ## Fast editor controls
@@ -39,6 +39,7 @@ Do not open the HTML files directly from Explorer. The local server is required 
 - Left-drag an object to move it. Choose **Rotate** or **Scale** in the toolbar to make the same drag rotate or resize it.
 - **F** focuses the selection, **Home** resets the camera, and **Numpad 7** opens the high top view.
 - **G** selects Move, **R** selects Rotate, and **Alt+S** selects Scale while keeping ordinary S available for camera movement.
+- **Ctrl+S** saves a browser draft, **/** focuses asset search, and **?** opens the controls guide.
 - Ctrl/Command-click objects in the viewport or outliner to select several. Ctrl+D duplicates; Ctrl+Z and Ctrl+Y undo and redo.
 - Arrow keys nudge the selection. Choose World or Local in the toolbar, and change Snap for the movement/grid size.
 

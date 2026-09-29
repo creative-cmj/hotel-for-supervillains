@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import { GLTFLoader } from './vendor/addons/loaders/GLTFLoader.js';
 import { CATALOG, FLOOR_HEIGHTS, createCatalogObject, layoutCollider, serializeObject } from './editor/catalog.js';
-import { PRESETS } from './editor/presets.js';
+import { PRESETS } from './editor/presets.js?v=20260929b';
 
 const el = (id) => document.getElementById(id);
 const canvas = el('editor-canvas');
@@ -49,6 +49,7 @@ const viewTarget = new THREE.Vector3(0, FLOOR_HEIGHTS[1], 0);
 const playPosition = new THREE.Vector3(0, FLOOR_HEIGHTS[1], 7);
 let playPitch = 0;
 let playMode = false;
+let hadPointerLock = false;
 const cameraKeys = new Set();
 let idCounter = 1;
 let pointerDown = null;
@@ -73,6 +74,16 @@ for (const level of [1, 2, 3]) {
 
 const primarySelection = () => selectedRoots.at(-1) || null;
 function status(message) { el('status').textContent = message; }
+function updateProjectState() {
+  const count = roots.filter((root) => root.userData.layout.floor === floor).length;
+  el('project-state').textContent = `Floor ${floor} · ${count} object${count === 1 ? '' : 's'} · Autosave on`;
+}
+function saveBrowserDraft() {
+  localStorage.setItem('grand-disaster-layout-draft', JSON.stringify(serializeLayout()));
+  status('Draft saved in this browser');
+  addAction('Saved browser draft');
+  updateProjectState();
+}
 function snap(value) { const step = Number(el('snap').value); return Math.round(value / step) * step; }
 function activeRoots() { return roots.filter((root) => root.userData.layout.floor === floor && !root.userData.editor?.hidden); }
 function rootLabel(root) { return root.userData.editor?.name || CATALOG[root.userData.layout.type]?.label || root.name; }
@@ -226,19 +237,30 @@ function hydrateRoot(data) {
 function serializeLayout() {
   return { version: 1, name: el('layout-name').value.trim() || 'Custom Hotel Additions', objects: roots.map(serializeRoot) };
 }
+function suggestNextPresetPosition() {
+  const positions = roots.filter((root) => root.userData.layout.floor === floor).map((root) => root.position.x);
+  el('preset-x').value = String(positions.length ? Math.ceil((Math.max(...positions) + 6) / 12) * 12 : 0);
+  el('preset-z').value = '0';
+}
 function loadLayout(layout, options = {}) {
   if (layout.version !== 1 || !Array.isArray(layout.objects)) throw Error('This is not a Grand Disaster layout file.');
+  for (const data of layout.objects) {
+    if (!data || !Array.isArray(data.position) || data.position.length !== 3 || !data.position.every(Number.isFinite) || ![1,2,3].includes(data.floor)) {
+      throw Error('The layout contains an invalid object position or floor.');
+    }
+  }
   for (const root of roots.splice(0)) scene.remove(root);
   selectedRoots.length = 0;
   el('layout-name').value = layout.name || 'Custom Hotel Additions';
   for (const data of layout.objects) if (CATALOG[data.type]) hydrateRoot(data);
   updateFloorVisibility();
+  suggestNextPresetPosition();
   status(`Loaded ${roots.length} objects`);
-  if (options.resetHistory !== false) {
+  if (options.resetHistory === true) {
     history = [];
     historyIndex = -1;
-    pushHistory(options.label || 'Loaded layout', true);
   }
+  pushHistory(options.label || 'Loaded layout', true);
 }
 function addObject(type, source = null, options = {}) {
   const definition = CATALOG[type];
@@ -262,13 +284,16 @@ function addObject(type, source = null, options = {}) {
 }
 function addPreset(presetId) {
   const preset = PRESETS[presetId];
+  const anchorX = snap(Number(el('preset-x').value));
+  const anchorZ = snap(Number(el('preset-z').value));
+  if (!Number.isFinite(anchorX) || !Number.isFinite(anchorZ)) return status('Enter valid X and Z placement coordinates');
   const added = [];
   for (const [type, x, z, rotationY, scale = [1,1,1]] of preset.objects) {
     const definition = CATALOG[type];
     added.push(addObject(type, {
       type,
       floor,
-      position: [x + snap(viewTarget.x), FLOOR_HEIGHTS[floor] + (definition.offsetY || 0), z + snap(viewTarget.z)],
+      position: [x + anchorX, FLOOR_HEIGHTS[floor] + (definition.offsetY || 0), z + anchorZ],
       rotationY,
       scale,
     }, { exact: true, record: false }));
@@ -277,7 +302,8 @@ function addPreset(presetId) {
   refreshSelectionUI();
   renderOutliner();
   pushHistory(`Added ${preset.label} prefab`);
-  status(`Added editable ${preset.label} prefab to Floor ${floor}`);
+  el('preset-x').value = String(anchorX + 12);
+  status(`Added editable ${preset.label} at X ${anchorX}, Z ${anchorZ} on Floor ${floor}`);
 }
 function deleteSelected() {
   if (!selectedRoots.length) return;
@@ -293,12 +319,19 @@ function deleteSelected() {
   status(deletable.length ? 'Selection removed' : 'Unlock the selection before deleting');
 }
 function duplicateSelected(offset = .75) {
+  const copyIds = new Map();
   const copies = [...selectedRoots].map((root) => {
     const data = serializeRoot(root);
     data.position[0] += offset;
     data.position[2] += offset;
-    return addObject(data.type, data, { exact: true, record: false });
+    const copy = addObject(data.type, data, { exact: true, record: false });
+    copyIds.set(data.id, copy.userData.layout.id);
+    return copy;
   });
+  for (const copy of copies) {
+    const parentId = copy.userData.editor?.parentId;
+    if (copyIds.has(parentId)) copy.userData.editor.parentId = copyIds.get(parentId);
+  }
   selectedRoots.splice(0, selectedRoots.length, ...copies);
   refreshSelectionUI();
   renderOutliner();
@@ -334,14 +367,19 @@ function snapOpeningToWall(root) {
   if (!['door','doorframe','window'].includes(root.userData.layout.type)) return;
   let nearest = null, best = 1.5;
   for (const wall of roots.filter((entry) => entry.userData.layout.floor === floor && entry.userData.layout.type === 'wall')) {
-    const dx = Math.abs(root.position.x-wall.position.x), dz = Math.abs(root.position.z-wall.position.z);
-    const distanceToLine = Math.abs(Math.sin(wall.rotation.y)) > .7 ? dx : dz;
-    if (distanceToLine < best) { best=distanceToLine; nearest=wall; }
+    const dx = root.position.x-wall.position.x, dz = root.position.z-wall.position.z;
+    const sine = Math.sin(wall.rotation.y), cosine = Math.cos(wall.rotation.y);
+    const along = dx*cosine-dz*sine;
+    const perpendicular = dx*sine+dz*cosine;
+    const halfLength = CATALOG.wall.size[0]*Math.abs(wall.scale.x)/2;
+    if (Math.abs(along) <= halfLength + .25 && Math.abs(perpendicular) < best) {
+      best=Math.abs(perpendicular); nearest={ wall, perpendicular, sine, cosine };
+    }
   }
   if (!nearest) return;
-  root.rotation.y = nearest.rotation.y;
-  if (Math.abs(Math.sin(nearest.rotation.y)) > .7) root.position.x = nearest.position.x;
-  else root.position.z = nearest.position.z;
+  root.rotation.y = nearest.wall.rotation.y;
+  root.position.x -= nearest.perpendicular*nearest.sine;
+  root.position.z -= nearest.perpendicular*nearest.cosine;
   status(`${rootLabel(root)} snapped to nearby wall`);
 }
 function alignSelection(axis) {
@@ -445,6 +483,7 @@ function renderOutliner() {
   const all = roots.filter((root) => root.userData.layout.floor === floor);
   const visible = all.filter((root) => !query || `${rootLabel(root)} ${root.userData.layout.id} ${root.userData.editor?.collection || ''}`.toLowerCase().includes(query)).sort((a,b) => (a.userData.editor?.collection || 'Ungrouped').localeCompare(b.userData.editor?.collection || 'Ungrouped') || rootLabel(a).localeCompare(rootLabel(b)));
   el('object-count').textContent = String(all.length);
+  updateProjectState();
   if (!visible.length) {
     const empty = document.createElement('div');
     empty.className = 'empty';
@@ -464,7 +503,14 @@ function renderOutliner() {
     button.classList.toggle('hidden-object', root.userData.editor?.hidden);
     button.classList.toggle('locked-object', root.userData.editor?.locked);
     button.classList.toggle('child-object', Boolean(root.userData.editor?.parentId));
-    button.innerHTML = `<span><span class="object-icon">◆</span> ${rootLabel(root)}</span><small>${root.userData.editor?.locked ? '🔒' : ''}${root.userData.editor?.hidden ? ' ◌' : ''}</small>`;
+    const label = document.createElement('span');
+    const icon = document.createElement('span');
+    icon.className = 'object-icon';
+    icon.textContent = '◆';
+    label.append(icon, document.createTextNode(` ${rootLabel(root)}`));
+    const flags = document.createElement('small');
+    flags.textContent = `${root.userData.editor?.locked ? '🔒' : ''}${root.userData.editor?.hidden ? ' ◌' : ''}`;
+    button.append(label, flags);
     button.onclick = (event) => select(root, event.ctrlKey || event.metaKey || event.shiftKey);
     button.ondblclick = () => { select(root); focusSelected(); };
     host.append(button);
@@ -507,6 +553,7 @@ function pushHistory(label, force = false) {
   if (history.length > 80) history.shift();
   historyIndex = history.length - 1;
   localStorage.setItem('grand-disaster-layout-autosave', json);
+  updateProjectState();
   updateHistoryUI();
   addAction(label);
   updateStats();
@@ -522,25 +569,40 @@ function restoreHistory(index) {
   floor = history[index].floor;
   loadLayout(JSON.parse(history[index].json), { resetHistory:false });
   replaying = false;
+  localStorage.setItem('grand-disaster-layout-autosave', history[index].json);
+  updateProjectState();
   updateHistoryUI();
+  updateStats();
   addAction(`Restored history: ${history[index].label}`);
   status(`Restored ${history[index].label}`);
 }
 function saveVersion() {
-  const versions = JSON.parse(localStorage.getItem('grand-disaster-layout-versions') || '[]');
+  const versions = savedVersions();
   const number = (versions.at(-1)?.number || 0) + 1;
   const name = `Hotel_v${String(number).padStart(2,'0')}`;
   versions.push({ number, name, savedAt: new Date().toISOString(), layout: serializeLayout() });
   localStorage.setItem('grand-disaster-layout-versions', JSON.stringify(versions.slice(-25)));
+  renderVersions();
   status(`Saved ${name}`);
   addAction(`Saved version ${name}`);
 }
-function restoreLatestVersion() {
-  const versions = JSON.parse(localStorage.getItem('grand-disaster-layout-versions') || '[]');
-  const latest = versions.at(-1);
-  if (!latest) return status('No saved versions yet');
-  loadLayout(latest.layout, { label:`Restored ${latest.name}` });
-  status(`Restored ${latest.name}`);
+function savedVersions() {
+  try { return JSON.parse(localStorage.getItem('grand-disaster-layout-versions') || '[]').filter((entry) => entry?.layout?.version === 1 && Array.isArray(entry.layout.objects)); }
+  catch { return []; }
+}
+function renderVersions() {
+  const picker = el('version-picker');
+  const versions = savedVersions();
+  picker.replaceChildren();
+  if (!versions.length) { picker.add(new Option('No versions saved', '')); return; }
+  versions.forEach((entry, index) => picker.add(new Option(`${entry.name} · ${new Date(entry.savedAt).toLocaleString()} · ${entry.layout.objects.length} objects`, String(index))));
+  picker.value = String(versions.length - 1);
+}
+function restoreSelectedVersion() {
+  const version = savedVersions()[Number(el('version-picker').value)];
+  if (!version) return status('Select a saved version first');
+  loadLayout(version.layout, { label:`Restored ${version.name}` });
+  status(`Restored ${version.name} · Undo returns to the previous layout`);
 }
 function refreshCollisionPreview() {
   collisionGroup.clear();
@@ -605,17 +667,26 @@ function duplicateFloor() {
   const target = floor === 3 ? 1 : floor + 1;
   const source = roots.filter((root) => root.userData.layout.floor === sourceFloor);
   if (!source.length) return status('This floor is empty');
+  if (roots.some((root) => root.userData.layout.floor === target)) return status(`Floor ${target} already has objects; choose an empty floor for a clean duplicate`);
   const added = [];
+  const copyIds = new Map();
   for (const root of source) {
     const data = serializeRoot(root);
     data.floor = target;
     data.position[1] += FLOOR_HEIGHTS[target] - FLOOR_HEIGHTS[sourceFloor];
     floor = target;
-    added.push(addObject(data.type, data, { exact:true, record:false }));
+    const copy = addObject(data.type, data, { exact:true, record:false });
+    copyIds.set(data.id, copy.userData.layout.id);
+    added.push(copy);
+  }
+  for (const copy of added) {
+    const parentId = copy.userData.editor?.parentId;
+    if (copyIds.has(parentId)) copy.userData.editor.parentId = copyIds.get(parentId);
   }
   floor = target;
   selectedRoots.splice(0, selectedRoots.length, ...added);
   updateFloorVisibility();
+  suggestNextPresetPosition();
   resetView();
   pushHistory(`Duplicated Floor ${sourceFloor} to Floor ${target}`);
   status(`Duplicated ${added.length} objects to Floor ${target}`);
@@ -690,10 +761,12 @@ function togglePlayTest() {
   if (playMode) {
     playPosition.set(viewTarget.x, FLOOR_HEIGHTS[floor]+1.7, viewTarget.z+3);
     playPitch=0;
-    canvas.requestPointerLock?.();
+    hadPointerLock = false;
     status('Play-test: WASD walk · mouse look · Esc exits');
+    try { canvas.requestPointerLock?.()?.catch(() => status('Play-test: WASD walk · mouse lock unavailable in this browser · Esc exits')); }
+    catch { status('Play-test: WASD walk · mouse lock unavailable in this browser · Esc exits'); }
   } else {
-    document.exitPointerLock?.();
+    if (document.pointerLockElement === canvas) document.exitPointerLock?.();
     updateFloorVisibility();
     status('Returned to edit mode');
   }
@@ -713,6 +786,14 @@ for (const [presetId,preset] of Object.entries(PRESETS)) {
   button.onclick=()=>addPreset(presetId);
   el('presets').append(button);
 }
+document.querySelectorAll('[data-quick-preset]').forEach((button) => {
+  button.onclick = () => addPreset(button.dataset.quickPreset);
+});
+el('preset-view-center').onclick = () => {
+  el('preset-x').value = String(snap(viewTarget.x));
+  el('preset-z').value = String(snap(viewTarget.z));
+  status('Next section will use the center of your current view');
+};
 for (const [name,color] of Object.entries({ Purple:'#64258b', Pink:'#e84ca5', Cyan:'#38c9e8', Black:'#17121f', Gold:'#d8a84e', Cream:'#f0dfe8' })) {
   const button=document.createElement('button');
   button.style.background=color;
@@ -721,7 +802,7 @@ for (const [name,color] of Object.entries({ Purple:'#64258b', Pink:'#e84ca5', Cy
   el('material-swatches').append(button);
 }
 document.querySelectorAll('#floors button').forEach((button)=>{
-  button.onclick=()=>{ floor=Number(button.dataset.floor); updateFloorVisibility(); resetView(); status(`Editing Floor ${floor}`); };
+  button.onclick=()=>{ floor=Number(button.dataset.floor); updateFloorVisibility(); suggestNextPresetPosition(); resetView(); status(`Editing Floor ${floor}`); };
 });
 el('palette-search').oninput=renderPalette;
 el('outliner-search').oninput=renderOutliner;
@@ -773,8 +854,10 @@ el('verify-scene').onclick=verifyScene;
 el('undo').onclick=()=>restoreHistory(historyIndex-1);
 el('redo').onclick=()=>restoreHistory(historyIndex+1);
 el('save-version').onclick=saveVersion;
-el('restore-version').onclick=restoreLatestVersion;
-el('save-browser').onclick=()=>{ localStorage.setItem('grand-disaster-layout-draft',JSON.stringify(serializeLayout())); status('Draft saved in this browser'); addAction('Saved browser draft'); };
+el('restore-version').onclick=restoreSelectedVersion;
+el('save-browser').onclick=saveBrowserDraft;
+el('quick-save').onclick=saveBrowserDraft;
+el('quick-test').onclick=togglePlayTest;
 el('load-browser').onclick=()=>{
   const saved=localStorage.getItem('grand-disaster-layout-draft');
   if(!saved)return status('No browser draft found');
@@ -804,19 +887,28 @@ el('zoom-in').onclick=()=>{distance=Math.max(4,distance-3);updateCamera();};
 el('zoom-out').onclick=()=>{distance=Math.min(70,distance+3);updateCamera();};
 el('reset-view').onclick=resetView;
 el('play-test').onclick=togglePlayTest;
+const shortcutDialog=el('shortcut-dialog');
+const openShortcuts=()=>shortcutDialog.showModal ? shortcutDialog.showModal() : shortcutDialog.setAttribute('open','');
+const closeShortcuts=()=>shortcutDialog.close ? shortcutDialog.close() : shortcutDialog.removeAttribute('open');
+el('shortcut-help').onclick=openShortcuts;
+el('toolbar-help').onclick=openShortcuts;
+el('close-shortcuts').onclick=closeShortcuts;
+shortcutDialog.addEventListener('click',(event)=>{ if(event.target===shortcutDialog)closeShortcuts(); });
 for(const tool of ['move','rotate','scale']) el(`tool-${tool}`).onclick=()=>setTransformTool(tool);
 
 canvas.addEventListener('contextmenu',(event)=>event.preventDefault());
 canvas.addEventListener('pointerdown',(event)=>{
+  if (playMode) return;
   setPointer(event);
   const hit=raycaster.intersectObjects(activeRoots(),true).find((entry)=>!entry.object.userData.editorGizmo);
   const root=hit?.object.userData.editorRoot || null;
   if(event.button===0 && root){
-    select(root,event.ctrlKey||event.metaKey||event.shiftKey);
+    const additive=event.ctrlKey||event.metaKey||event.shiftKey;
+    if (additive || !selectedRoots.includes(root)) select(root,additive);
     dragPlane.constant=-root.position.y;
     const point=new THREE.Vector3();
     raycaster.ray.intersectPlane(dragPlane,point);
-    pointerDown={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,button:event.button,moved:false,dragRoot:root,offset:point.sub(root.position),initialRotation:root.rotation.y,initialScale:root.scale.clone()};
+    pointerDown={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,button:event.button,moved:false,dragRoot:root,offset:point.sub(root.position),initialRotation:root.rotation.y,initialScale:root.scale.clone(),initialPositions:new Map(selectedRoots.map((entry)=>[entry,entry.position.clone()]))};
   } else {
     pointerDown={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,button:event.button,moved:false,empty:event.button===0&&!root};
   }
@@ -841,8 +933,13 @@ canvas.addEventListener('pointermove',(event)=>{
       setPointer(event);
       const point=new THREE.Vector3();
       if(raycaster.ray.intersectPlane(dragPlane,point)){
-        pointerDown.dragRoot.position.x=snap(point.x-pointerDown.offset.x);
-        pointerDown.dragRoot.position.z=snap(point.z-pointerDown.offset.z);
+        const start=pointerDown.initialPositions.get(pointerDown.dragRoot);
+        const deltaX=snap(point.x-pointerDown.offset.x)-start.x;
+        const deltaZ=snap(point.z-pointerDown.offset.z)-start.z;
+        for (const [entry,initial] of pointerDown.initialPositions) if (!entry.userData.editor?.locked) {
+          entry.position.x=initial.x+deltaX;
+          entry.position.z=initial.z+deltaZ;
+        }
       }
     } else if(transformTool==='rotate') {
       const degrees=Math.round(THREE.MathUtils.radToDeg(pointerDown.initialRotation+totalX*.01)/15)*15;
@@ -862,7 +959,7 @@ canvas.addEventListener('pointerup',()=>{
   const moved=pointerDown.moved,dragged=pointerDown.dragRoot,empty=pointerDown.empty;
   pointerDown=null;
   canvas.classList.remove('dragging');
-  if(dragged&&moved){snapOpeningToWall(dragged);refreshSelectionUI();pushHistory(`${transformTool[0].toUpperCase()+transformTool.slice(1)} transform`);}
+  if(dragged&&moved){if(selectedRoots.length===1)snapOpeningToWall(dragged);refreshSelectionUI();pushHistory(`${transformTool[0].toUpperCase()+transformTool.slice(1)} transform`);}
   else if(empty&&!moved)select(null);
 });
 canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging');});
@@ -888,10 +985,14 @@ document.addEventListener('mousemove',(event)=>{
   }
 });
 document.addEventListener('pointerlockchange',()=>{
-  if(playMode&&document.pointerLockElement!==canvas)togglePlayTest();
+  if (document.pointerLockElement === canvas) hadPointerLock = true;
+  else if (playMode && hadPointerLock) togglePlayTest();
 });
 window.addEventListener('keydown',(event)=>{
   if(event.target.matches('input,select,textarea'))return;
+  if((event.ctrlKey||event.metaKey)&&event.code==='KeyS'){event.preventDefault();saveBrowserDraft();return;}
+  if(event.code==='Slash'){event.preventDefault();el('palette-search').focus();el('palette-search').select();return;}
+  if(event.key==='?'||event.code==='F1'){event.preventDefault();openShortcuts();return;}
   if((event.ctrlKey||event.metaKey)&&event.code==='KeyZ'){event.preventDefault();restoreHistory(historyIndex+(event.shiftKey?1:-1));return;}
   if((event.ctrlKey||event.metaKey)&&event.code==='KeyY'){event.preventDefault();restoreHistory(historyIndex+1);return;}
   if((event.ctrlKey||event.metaKey)&&event.code==='KeyD'){event.preventDefault();duplicateSelected();return;}
@@ -941,9 +1042,19 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-updateFloorVisibility();
+renderVersions();
+let restoredSession=false;
+try {
+  const saved=localStorage.getItem('grand-disaster-layout-autosave');
+  if (saved) {
+    const layout=JSON.parse(saved);
+    loadLayout(layout,{label:'Recovered autosaved session',resetHistory:true});
+    restoredSession=true;
+    status(`Recovered ${roots.length} autosaved objects`);
+  }
+} catch (error) { status(`Autosave could not be loaded: ${error.message}`); }
+if (!restoredSession) { updateFloorVisibility(); pushHistory('Started editor',true); }
 updateCamera();
-pushHistory('Started editor',true);
 updateStats();
 requestAnimationFrame(frame);
 window.__HOTEL_EDITOR_TEST__={
