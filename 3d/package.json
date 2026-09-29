@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/foundation.test.mjs tests/entrypoint.test.mjs tests/complete-hotel.test.mjs tests/editor.test.mjs",
+    "test": "node --test tests/foundation.test.mjs tests/entrypoint.test.mjs tests/complete-hotel.test.mjs tests/editor.test.mjs tests/characters.test.mjs",
     "test:browser": "node tests/browser-vertical-slice.mjs",
     "test:editor": "node tests/browser-editor.mjs",
+    "test:characters": "node tests/browser-characters.mjs",
+    "test:characters:game": "node tests/browser-villains-in-game.mjs",
     "test:performance": "node tests/performance-smoke.mjs",
     "test:live": "node tests/live-smoke.mjs"
   },

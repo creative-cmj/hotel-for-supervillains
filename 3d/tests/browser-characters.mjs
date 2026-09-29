@@ -1,0 +1,49 @@
+import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
+
+const endpoint=process.env.CDP_ENDPOINT??'http://127.0.0.1:9231';
+const targets=await(await fetch(`${endpoint}/json`)).json();
+const target=targets.find((entry)=>entry.type==='page'&&entry.url.includes('127.0.0.1:4180'));
+assert.ok(target,'Chrome must have a local hotel tab');
+const socket=new WebSocket(target.webSocketDebuggerUrl);
+await new Promise((resolve,reject)=>{socket.addEventListener('open',resolve,{once:true});socket.addEventListener('error',reject,{once:true});});
+let id=1;const pending=new Map();socket.addEventListener('message',({data})=>{const message=JSON.parse(data);if(!pending.has(message.id))return;const entry=pending.get(message.id);pending.delete(message.id);message.error?entry.reject(Error(message.error.message)):entry.resolve(message.result);});
+const call=(method,params={})=>new Promise((resolve,reject)=>{const key=id++;pending.set(key,{resolve,reject});socket.send(JSON.stringify({id:key,method,params}));});
+const evaluate=async(expression)=>{const result=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(result.exceptionDetails)throw Error(result.exceptionDetails.exception?.description||result.exceptionDetails.text);return result.result.value;};
+const delay=(ms)=>new Promise((resolve)=>setTimeout(resolve,ms));
+
+await call('Runtime.enable');await call('Network.enable');await call('Network.setCacheDisabled',{cacheDisabled:true});
+await call('Page.navigate',{url:`http://127.0.0.1:4180/3d/characters.html?qa=${Date.now()}`});
+for(let attempt=0;attempt<80&&!await evaluate('Boolean(window.__VILLAIN_ROSTER_TEST__)');attempt++)await delay(100);
+assert.ok(await evaluate('Boolean(window.__VILLAIN_ROSTER_TEST__)'),'Villain roster failed to boot');
+assert.equal(await evaluate('window.__VILLAIN_ROSTER_TEST__.entries.length'),30);
+assert.equal(await evaluate('window.__VILLAIN_ROSTER_TEST__.visibleCount'),30);
+const reports=JSON.parse(await evaluate('JSON.stringify(window.__VILLAIN_ROSTER_TEST__.reports)'));
+assert.ok(reports.every((report)=>report.missing.length===0),'Every character needs a complete body');
+assert.ok(reports.every((report)=>report.triangles<10000),'Every character must stay browser efficient');
+await delay(350);
+let image=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+await writeFile(new URL('../preview-villain-lineup.png',import.meta.url),Buffer.from(image.data,'base64'));
+for(let batch=0;batch<6;batch++){
+  await evaluate(`window.__VILLAIN_ROSTER_TEST__.showBatch(${batch});window.__VILLAIN_ROSTER_TEST__.setCamera(0,.3,13)`);
+  assert.equal(await evaluate('window.__VILLAIN_ROSTER_TEST__.visibleCount'),5);
+  await delay(160);
+  image=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  await writeFile(new URL(`../preview-villain-batch-${batch+1}.png`,import.meta.url),Buffer.from(image.data,'base64'));
+}
+await evaluate('window.__VILLAIN_ROSTER_TEST__.showBatch(0);window.__VILLAIN_ROSTER_TEST__.selectEntry(window.__VILLAIN_ROSTER_TEST__.entries[2])');
+assert.match(await evaluate("document.querySelector('#selected-card').textContent"),/Captain Combustion/);
+assert.match(await evaluate("document.querySelector('#selected-card').textContent"),/Fireproof pillowcase/);
+await delay(250);
+image=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+await writeFile(new URL('../preview-villain-detail.png',import.meta.url),Buffer.from(image.data,'base64'));
+await evaluate("window.__VILLAIN_ROSTER_TEST__.showBatch('all');window.__VILLAIN_ROSTER_TEST__.setCamera(Math.PI,.48,23)");
+await delay(200);
+image=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+await writeFile(new URL('../preview-villain-lineup-back.png',import.meta.url),Buffer.from(image.data,'base64'));
+await evaluate("window.__VILLAIN_ROSTER_TEST__.setCamera(Math.PI/2,.48,23)");
+await delay(200);
+image=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+await writeFile(new URL('../preview-villain-lineup-side.png',import.meta.url),Buffer.from(image.data,'base64'));
+socket.close();
+console.log('Villain roster browser QA: PASS — 30 characters, six batches, complete bodies, details, front/back/side views.');
