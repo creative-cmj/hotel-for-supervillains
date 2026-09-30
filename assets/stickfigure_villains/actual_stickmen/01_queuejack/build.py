@@ -112,6 +112,109 @@ def ball(name, center, size, bone_name, material, segments=12, rings=8):
         polygon.use_smooth = True
     return bind(obj, bone_name, material)
 
+def bent_limb(name, a, b, c, radii, upper_bone, lower_bone, material):
+    """A continuous two-bone stick with a soft bend and shared surface normals."""
+    a, b, c = Vector(a), Vector(b), Vector(c)
+    samples = ((a, 0), (a.lerp(b, .08), 0), (a.lerp(b, .55), 0),
+               (a.lerp(b, .91), .22), (b, .50), (b.lerp(c, .09), .78),
+               (b.lerp(c, .55), 1), (b.lerp(c, .92), 1), (c, 1))
+    verts, faces = [], []
+    side_count = 10
+    for i, (point, _) in enumerate(samples):
+        before = samples[max(0, i-1)][0]
+        after = samples[min(len(samples)-1, i+1)][0]
+        tangent = (after-before).normalized()
+        axis_u = tangent.cross(Vector((0, 1, 0))).normalized()
+        axis_v = tangent.cross(axis_u).normalized()
+        radius = radii[0] + (radii[1]-radii[0]) * (i/8)
+        if i in (0, 8):
+            radius *= .78
+        for j in range(side_count):
+            angle = math.tau * j / side_count
+            verts.append(point + radius*(math.cos(angle)*axis_u + math.sin(angle)*axis_v))
+        if i:
+            for j in range(side_count):
+                nxt = (j+1) % side_count
+                faces.append(((i-1)*side_count+j, (i-1)*side_count+nxt,
+                              i*side_count+nxt, i*side_count+j))
+    faces.extend((tuple(reversed(range(side_count))),
+                  tuple((len(samples)-1)*side_count+j for j in range(side_count))))
+    mesh = bpy.data.meshes.new(name + "Mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    scene.collection.objects.link(obj)
+    mesh.materials.append(material)
+    for polygon in mesh.polygons:
+        polygon.use_smooth = len(polygon.vertices) == 4
+    obj.parent = arm
+    obj.matrix_parent_inverse = arm.matrix_world.inverted()
+    top = obj.vertex_groups.new(name=upper_bone)
+    bottom = obj.vertex_groups.new(name=lower_bone)
+    for i, (_, lower_weight) in enumerate(samples):
+        indices = list(range(i*side_count, (i+1)*side_count))
+        if lower_weight < 1:
+            top.add(indices, 1-lower_weight, "REPLACE")
+        if lower_weight > 0:
+            bottom.add(indices, lower_weight, "REPLACE")
+    modifier = obj.modifiers.new("StickSkin", "ARMATURE")
+    modifier.object = arm
+    return obj
+
+def spine_tube():
+    """One tapered torso/neck surface, blended across four rig bones."""
+    rings = ((1.096,.045), (1.22,.049), (1.31,.051), (1.39,.052),
+             (1.50,.052), (1.63,.051), (1.72,.050), (1.82,.048),
+             (1.88,.044), (1.94,.035), (2.07,.034))
+    count = 10
+    verts, faces = [], []
+    for i, (z, radius) in enumerate(rings):
+        for j in range(count):
+            theta = math.tau*j/count
+            verts.append((radius*math.cos(theta), radius*math.sin(theta), z))
+        if i:
+            for j in range(count):
+                k = (j+1)%count
+                faces.append(((i-1)*count+j,(i-1)*count+k,i*count+k,i*count+j))
+    faces.extend((tuple(reversed(range(count))),
+                  tuple((len(rings)-1)*count+j for j in range(count))))
+    mesh = bpy.data.meshes.new("Queuejack_ContinuousSpineMesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new("Queuejack_ContinuousSpine", mesh)
+    scene.collection.objects.link(obj)
+    mesh.materials.append(BLUE)
+    for poly in mesh.polygons:
+        poly.use_smooth = len(poly.vertices) == 4
+    obj.parent = arm
+    obj.matrix_parent_inverse = arm.matrix_world.inverted()
+    groups = {name:obj.vertex_groups.new(name=name) for name in ("PELVIS","SPINE","CHEST","NECK")}
+    for i, (z, _) in enumerate(rings):
+        if z < 1.31:
+            weights = (("PELVIS",1),)
+        elif z < 1.39:
+            t = (z-1.31)/.08
+            weights = (("PELVIS",1-t),("SPINE",t))
+        elif z < 1.63:
+            weights = (("SPINE",1),)
+        elif z < 1.72:
+            t = (z-1.63)/.09
+            weights = (("SPINE",1-t),("CHEST",t))
+        elif z < 1.88:
+            weights = (("CHEST",1),)
+        elif z < 1.94:
+            t = (z-1.88)/.06
+            weights = (("CHEST",1-t),("NECK",t))
+        else:
+            weights = (("NECK",1),)
+        indices = list(range(i*count,(i+1)*count))
+        for bone_name, weight in weights:
+            if weight > .0001:
+                groups[bone_name].add(indices,weight,"REPLACE")
+    modifier = obj.modifiers.new("StickSkin","ARMATURE")
+    modifier.object = arm
+    return obj
+
 def plate(name, center, size, bone_name, material, bevel=0):
     bpy.ops.mesh.primitive_cube_add(size=1, location=center)
     obj = bpy.context.object
@@ -126,38 +229,28 @@ def plate(name, center, size, bone_name, material, bevel=0):
         bpy.ops.object.modifier_apply(modifier=mod.name)
     return bind(obj, bone_name, material)
 
-# The central body is a plain line, not a sculpted chest, coat, or hip.
-for name, bone_name, radius in (
-    ("RootBody", "PELVIS", .045),
-    ("MiddleBody", "SPINE", .052),
-    ("UpperBody", "CHEST", .049),
-    ("NeckLine", "NECK", .034),
-):
-    bone = arm.data.bones[bone_name]
-    rod(f"Queuejack_{name}", bone.head_local, bone.tail_local, radius, bone_name, BLUE)
-rod("Queuejack_HeadStem", (0, 0, 2.03), (0, 0, 2.17), .035, "HEAD", BLUE)
+# Keep the central body one clean, flexible stick instead of four stacked rods.
+spine_tube()
+rod("Queuejack_HeadStem", (0, 0, 2.07), (0, 0, 2.17), .035, "HEAD", BLUE)
 
 # Shoulder and hip junctions are literal short stick branches. They bridge the
 # central line to the limb lines so a neutral pose never looks disassembled.
 for side, sign in (("L", -1), ("R", 1)):
-    rod(f"Queuejack_{side}_ShoulderBridge", (0, 0, 1.80), (sign*.205, 0, 1.80), .034, "CHEST", BLUE)
+    rod(f"Queuejack_{side}_ShoulderBridge", (0, 0, 1.80), (sign*.30, 0, 1.79), .034, "CHEST", BLUE)
     rod(f"Queuejack_{side}_HipBridge", (0, 0, 1.105), (sign*.129, 0, 1.105), .041, "PELVIS", BLUE)
 
 ball("Queuejack_RoundHead", (0, -.005, 2.29), (.190, .176, .196), "HEAD", BLUE, 16, 10)
 for side, sign in (("L", -1), ("R", 1)):
-    for part, radius in (("SHOULDER", .037), ("UPPER_ARM", .031), ("FOREARM", .029), ("THIGH", .041), ("SHIN", .036)):
-        bone_name = f"{side}_{part}"
-        bone = arm.data.bones[bone_name]
-        end = bone.tail_local.copy()
-        if part == "SHIN":
-            end.z = .12
-        rod(f"Queuejack_{side}_{part}_Stick", bone.head_local, end, radius, bone_name, BLUE)
-    for joint, parent, radius in (
-        ("Elbow", f"{side}_FOREARM", .036),
-        ("Knee", f"{side}_SHIN", .043),
-    ):
-        bone = arm.data.bones[parent]
-        ball(f"Queuejack_{side}_{joint}", bone.head_local, (radius, radius, radius), parent, BLUE, 10, 6)
+    upper = arm.data.bones[f"{side}_UPPER_ARM"]
+    forearm = arm.data.bones[f"{side}_FOREARM"]
+    bent_limb(f"Queuejack_{side}_ContinuousArm", upper.head_local, upper.tail_local,
+              forearm.tail_local, (.037,.029), f"{side}_UPPER_ARM", f"{side}_FOREARM", BLUE)
+    thigh = arm.data.bones[f"{side}_THIGH"]
+    shin = arm.data.bones[f"{side}_SHIN"]
+    ankle = shin.tail_local.copy()
+    ankle.z = .12
+    bent_limb(f"Queuejack_{side}_ContinuousLeg", thigh.head_local, thigh.tail_local,
+              ankle, (.043,.036), f"{side}_THIGH", f"{side}_SHIN", BLUE)
     hand_bone = arm.data.bones[f"{side}_HAND"]
     rod(f"Queuejack_{side}_WristBridge", hand_bone.head_local, hand_bone.tail_local,
         .030, f"{side}_HAND", BLUE)
