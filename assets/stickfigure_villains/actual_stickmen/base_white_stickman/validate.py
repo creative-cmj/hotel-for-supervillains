@@ -28,7 +28,7 @@ triangles=sum(len(poly.vertices)-2 for obj in meshes for poly in obj.data.polygo
 assert 2.15<size.z<2.3,size
 assert abs(minimum.z)<.02,minimum
 assert triangles<5000,triangles
-assert len({mat.name for obj in meshes for mat in obj.data.materials})==2
+assert len({mat.name for obj in meshes for mat in obj.data.materials})==3
 print("WHITE_STICKMAN_GLB_OK", "size_m",tuple(round(value,3) for value in size),
       "ground_z",round(minimum.z,3),"triangles",triangles,
       "bones",len(rigs[0].data.bones),"meshes",len(meshes),

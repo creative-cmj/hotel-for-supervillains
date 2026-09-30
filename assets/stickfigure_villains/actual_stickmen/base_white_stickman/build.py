@@ -5,6 +5,7 @@ Run with Blender in background mode; this never touches the running game or UI.
 from __future__ import annotations
 
 import math
+import sys
 from pathlib import Path
 
 import bpy
@@ -12,6 +13,7 @@ from mathutils import Vector
 
 OUT = Path(__file__).resolve().parent
 OUT.mkdir(parents=True, exist_ok=True)
+PREVIEW_ONLY = "--preview" in sys.argv
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
 
@@ -26,7 +28,8 @@ def mat(name, color, roughness=0.68):
 
 WHITE = mat("StickPerson_WarmPorcelain", (.93, .91, .90))
 INK = mat("StickPerson_FaceInk", (.018, .018, .025))
-FLOOR = mat("QA_DarkFloor_NotExported", (.065, .073, .105), .8)
+TONGUE = mat("StickPerson_HappyTongue", (.72, .05, .12))
+FLOOR = mat("QA_DarkFloor_NotExported", (.022, .028, .054), .8)
 
 # Reference ratio: head one, torso one, legs two. This scales to a 2.2 m
 # hotel person while keeping a generous expressive face and short oval shoes.
@@ -124,8 +127,8 @@ skinned_tube("StickPerson_ContinuousTorso",
     [[("PELVIS",1)],[ ("PELVIS",1) ],[("PELVIS",.4),("TORSO",.6)],
      [("TORSO",1)],[("TORSO",1)],[("TORSO",.7),("NECK",.3)],
      [("NECK",1)],[("NECK",1)]])
-sphere("StickPerson_SoftPelvisJoint",(0,0,1.055),(.085,.067,.058),
-       "PELVIS",segments=16,rings=10)
+sphere("StickPerson_SubtleHipBlend",(0,0,1.053),(.074,.061,.050),
+       "PELVIS",segments=12,rings=8)
 
 # Large almost spherical head, with the neck tucked under its lower pole.
 sphere("StickPerson_RoundHead", (0,0,1.91), (.302,.287,.303), "HEAD", segments=32, rings=18)
@@ -144,8 +147,8 @@ for side, sign in (("L",-1),("R",1)):
          [(f"{side}_UPPER_ARM",.5),(f"{side}_FOREARM",.5)],
          [(f"{side}_UPPER_ARM",.25),(f"{side}_FOREARM",.75)]] +
         [[(f"{side}_FOREARM",1)] for _ in range(3)])
-    sphere(f"StickPerson_{side}_SoftShoulder",(sign*.087,0,1.49),
-           (.044,.043,.047),f"{side}_UPPER_ARM",segments=14,rings=8)
+    sphere(f"StickPerson_{side}_SubtleShoulderBlend",(sign*.073,0,1.49),
+           (.042,.042,.045),f"{side}_UPPER_ARM",segments=12,rings=8)
     sphere(f"StickPerson_{side}_RoundHand",(sign*.35,0,.845),
            (.088,.079,.088),f"{side}_HAND",segments=16,rings=10)
     hip = Vector((sign*.075,0,1.055))
@@ -161,8 +164,8 @@ for side, sign in (("L",-1),("R",1)):
          [(f"{side}_THIGH",.5),(f"{side}_SHIN",.5)],
          [(f"{side}_THIGH",.25),(f"{side}_SHIN",.75)]] +
         [[(f"{side}_SHIN",1)] for _ in range(3)])
-    sphere(f"StickPerson_{side}_SoftFoot",(sign*.17,-.105,.085),
-           (.153,.226,.085),f"{side}_FOOT",segments=20,rings=12)
+    sphere(f"StickPerson_{side}_SoftFoot",(sign*.17,-.105,.077),
+           (.145,.219,.077),f"{side}_FOOT",segments=20,rings=12)
 
 # The facial mesh is a separate skinned glTF primitive. Its named morph
 # targets let the game blend six expressions without swapping head models.
@@ -183,6 +186,8 @@ def expression_geometry(expression):
                 theta = math.tau*j/sides
                 vx = x + width*math.sin(phi)*math.cos(theta)
                 vz = z + height*math.cos(phi)
+                if expression=="Happy":
+                    vz += .020*max(0,1-((vx-x)/.045)**2)
                 vy = center_y-.012*math.sin(phi)*math.sin(theta)
                 verts.append((vx,vy,vz))
         for i in range(rings):
@@ -211,9 +216,9 @@ def expression_geometry(expression):
     for sign in (-1,1):
         base_z = 2.047 + (.021 if expression=="Surprised" else 0)
         if expression=="Angry":
-            slope=-.040*sign
+            slope=.040*sign
         elif expression=="Sad":
-            slope=.038*sign
+            slope=-.038*sign
         elif expression=="Confused":
             slope=.018 if sign<0 else -.034
         else:
@@ -240,17 +245,40 @@ def expression_geometry(expression):
             else: z=1.816+.018*t*t
             mouth.append((x,z))
     add_stroke(mouth,.0085 if expression!="Happy" else .011)
-    return verts,faces
+    def add_fan(boundary, push):
+        start=len(verts)
+        center_x=sum(p[0] for p in boundary)/len(boundary)
+        center_z=sum(p[1] for p in boundary)/len(boundary)
+        verts.append((center_x,face_y(center_x,center_z)-push,center_z))
+        for x,z in boundary:
+            verts.append((x,face_y(x,z)-push,z))
+        for i in range(len(boundary)):
+            faces.append((start,start+1+i,start+1+(i+1)%len(boundary)))
+    if expression=="Happy":
+        upper=[(-.085+.17*i/5,1.839) for i in range(6)]
+        lower=[(.085-.17*i/5,1.839-.071*math.sin(math.pi*i/5)) for i in range(6)]
+        opening=upper+lower
+        tongue=[(.036*math.cos(math.tau*i/12),1.780+.014*math.sin(math.tau*i/12)) for i in range(12)]
+    else:
+        opening=[(.0004*math.cos(math.tau*i/12),1.800+.0004*math.sin(math.tau*i/12)) for i in range(12)]
+        tongue=[(.0004*math.cos(math.tau*i/12),1.800+.0004*math.sin(math.tau*i/12)) for i in range(12)]
+    add_fan(opening,.014)
+    red_face_start=len(faces)
+    add_fan(tongue,.020)
+    return verts,faces,red_face_start
 
-NEUTRAL_VERTS, FACE_POLYGONS = expression_geometry("Neutral")
+NEUTRAL_VERTS, FACE_POLYGONS, RED_FACE_START = expression_geometry("Neutral")
 face_mesh = bpy.data.meshes.new("StickPerson_ExpressionFaceMesh")
 face_mesh.from_pydata(NEUTRAL_VERTS, [], FACE_POLYGONS)
 face_mesh.update()
 face = bpy.data.objects.new("StickPerson_ExpressionFace",face_mesh)
 scene.collection.objects.link(face)
 face.data.materials.append(INK)
+face.data.materials.append(TONGUE)
 for poly in face.data.polygons:
     poly.use_smooth=True
+for poly in list(face.data.polygons)[RED_FACE_START:]:
+    poly.material_index=1
 face.parent=rig
 face.matrix_parent_inverse=rig.matrix_world.inverted()
 face.vertex_groups.new(name="HEAD").add(list(range(len(face_mesh.vertices))),1,"REPLACE")
@@ -258,7 +286,7 @@ skin=face.modifiers.new("FaceFollowsHead","ARMATURE")
 skin.object=rig
 face.shape_key_add(name="Basis")
 for name in ("Happy","Angry","Surprised","Confused","Sad"):
-    vertices,_=expression_geometry(name)
+    vertices,_,_=expression_geometry(name)
     assert len(vertices)==len(NEUTRAL_VERTS)
     key=face.shape_key_add(name=name)
     for i,co in enumerate(vertices):
@@ -305,7 +333,9 @@ scene.render.resolution_y=700
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG"
 scene.world=bpy.data.worlds.new("QA_DarkStudio_NotExported")
-scene.world.color=(.025,.029,.046)
+scene.world.use_nodes=True
+scene.world.node_tree.nodes["Background"].inputs["Color"].default_value=(.006,.010,.025,1)
+scene.world.node_tree.nodes["Background"].inputs["Strength"].default_value=.45
 scene.view_settings.view_transform="Standard"
 
 def render(name,position,target=(0,0,1.1),scale=2.75,expression=None):
@@ -319,10 +349,11 @@ def render(name,position,target=(0,0,1.1),scale=2.75,expression=None):
 
 render("base-front.png",(0,-4,2.0))
 render("base-three-quarter.png",(2.4,-3.4,2.0))
-render("base-side.png",(4.2,0,2.0))
-render("base-three-quarter-back.png",(2.4,3.4,2.0))
-render("base-back.png",(0,4.2,2.0))
-for expression in ("Neutral","Happy","Angry","Surprised","Confused","Sad"):
+if not PREVIEW_ONLY:
+    render("base-side.png",(4.2,0,2.0))
+    render("base-three-quarter-back.png",(2.4,3.4,2.0))
+    render("base-back.png",(0,4.2,2.0))
+for expression in (("Happy",) if PREVIEW_ONLY else ("Neutral","Happy","Angry","Surprised","Confused","Sad")):
     render(f"expression-{expression.lower()}.png",(0,-2.0,1.97),
            target=(0,0,1.92),scale=.82,expression=expression)
 for key in face.data.shape_keys.key_blocks:
