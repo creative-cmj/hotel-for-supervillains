@@ -4,7 +4,7 @@ This folder is a new character-art branch for *Hotel for Supervillains*. The act
 
 ## Status
 
-The 30-character design plan is complete in `DESIGN_PLAN.md`. The reusable style/rig/animation test and **01 Queuejack**, **02 Knickknack**, and **03 Mrs Mute** have editable Blender files and exported GLBs. Characters 04–30 have **not** been modeled. These three have not been integrated into the game or tested as live NPCs. No site deployment was made.
+The 30-character design plan is complete in `DESIGN_PLAN.md`. The reusable style/rig/animation test and **01 Queuejack**, **02 Knickknack**, **03 Mrs Mute**, and **04 Patchwork Pete** have editable Blender files and exported GLBs. Characters 05–30 have **not** been modeled. These four have not been integrated into the game or tested as live NPCs. No site deployment was made.
 
 ## 01 Queuejack handoff
 
@@ -36,8 +36,14 @@ The editable file is `03_mrs_mute/03_mrs_mute.blend`; the Y-up export is `03_mrs
 
 The GLB re-import measured **1.024 × 0.858 × 1.889 m**, floor contact **0.000 m**, **7,340 triangles**, **5 flat-color materials**, one skinned mesh, **21 bones**, and **18 clips**. It is **536,520 bytes**. The first walk export clipped the shoes by about 2 cm; the final export raises walk contact and passed the repeated floor sample. Her collar is close to a 1 m overall width, so integration should verify doorway and nearby NPC spacing. All geometry/materials are original and untextured; **third-party licenses: none**.
 
+## 04 Patchwork Pete handoff
+
+The editable file is `04_patchwork_pete/04_patchwork_pete.blend`; the Y-up export is `04_patchwork_pete/04_patchwork_pete.glb`. He has a broad, short silhouette, uneven proud face, and one huge orange stitched torso repair. A tiny needle is his optional secondary prop. `PatchworkPete_SlapPatch` animates an admiring slap and patch response. Front, three-quarter, side, back, walk, sitting, special-action, gray, black-silhouette, and hotel-scale previews are alongside the files.
+
+The re-imported GLB measured **1.230 × 0.616 × 1.688 m**, floor contact **0.000 m**, **5,736 triangles**, **5 flat-color materials**, one skinned mesh, **21 bones**, and **18 clips**. It is **468,056 bytes**. The first fabric slab showed torso clipping; its depth and placement were corrected before delivery. Walk contact was also raised after a sampled export exposed shoe penetration. All geometry/materials are original and untextured; **third-party licenses: none**.
+
 ## Build and validation
 
 In Blender 5.1, run `scripts/build_foundation.py`, then each `build_*.py` character script separately. Their corresponding `qa_*.py` scripts generate gray, silhouette, and hotel-scale previews without altering the deliverables. `scripts/validate_01_queuejack.py` and `scripts/validate_character.py -- <folder> <height>` re-import GLBs and check mesh, skin, action count, metric scale, floor origin, and sampled animation contact. The project’s basic Node tests also pass (9/9).
 
-Characters 01–03 have passed the asset gate. Production should continue with Character 04 individually, using the shared artistic system but a new body, face, silhouette, and defining feature.
+Characters 01–04 have passed the current asset gate. Production should continue with Character 05 individually, using the shared artistic system but a new body, face, silhouette, and defining feature.
