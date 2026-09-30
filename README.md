@@ -48,4 +48,6 @@ This pass completes the repaired three-floor environment and establishes the fir
 
 The editable Blender post-process, exported GLB, build script, verification report, dimensions, triangle count, and licensing notes are in [`assets/polished_hotel/`](assets/polished_hotel/).
 
+New stick-man villain art is being produced separately from the live game. [Queuejack asset 01](assets/stickfigure_villains/actual_stickmen/01_queuejack/README.md) has an editable Blender source, GLB export, animations, and preview/QA renders; it is not yet wired into the game. The older cartoon-bodied prototypes remain archived in the asset tree and do not represent the new visual target.
+
 Three.js is MIT licensed; its original license is included in `3d/vendor/THREE_LICENSE.txt`.
