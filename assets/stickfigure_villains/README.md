@@ -1,17 +1,17 @@
-# Stick-figure villain production
+# Villain character production
 
 This folder is a new character-art branch for *Hotel for Supervillains*. The active game and `/classic/` are untouched. The previous roster is preserved on Git branch `backup/pre-stickfigure-roster`; previous untracked character work is in `C:\Users\Caleb Johnson\Downloads\hotel-character-roster-recovery-2026-09-29`.
 
 ## Status
 
-The 30-character design plan is complete in `DESIGN_PLAN.md`. The reusable style/rig/animation test and **01 Queuejack**, **02 Knickknack**, **03 Mrs Mute**, and **04 Patchwork Pete** have editable Blender files and exported GLBs. Characters 05–30 have **not** been modeled. These four have not been integrated into the game or tested as live NPCs. No site deployment was made.
+The **new primary art direction is actual 3D stick men**, documented for all 30 guests in [`STICKMAN_DESIGN_PLAN.md`](STICKMAN_DESIGN_PLAN.md). The previous `DESIGN_PLAN.md`, foundation, and four numbered character assets are **superseded cartoon-bodied prototypes**. Their editable Blender files, GLBs, and renders remain for comparison and recovery, but they do not satisfy the new visual brief and should not be integrated into the game as the intended roster. New stick-man modeling has not started. No site deployment was made.
 
-## 01 Queuejack handoff
+## Earlier prototype: 01 Queuejack
 
 | Asset | File |
 |---|---|
 | Editable model, rig, actions, QA stage | `01_queuejack/01_queuejack.blend` |
-| Game-ready model | `01_queuejack/01_queuejack.glb` |
+| Prototype GLB | `01_queuejack/01_queuejack.glb` |
 | Normal views | `queuejack-front.png`, `queuejack-three-quarter.png`, `queuejack-side.png`, `queuejack-back.png` in `01_queuejack/` |
 | Motion views | `queuejack-walk.png`, `queuejack-sit.png`, `queuejack-ticket-flick.png` |
 | Art checks | `queuejack-silhouette-front.png`, `queuejack-silhouette-three-quarter.png`, `queuejack-neutral-gray.png`, `queuejack-hotel-scale.png` |
@@ -22,7 +22,7 @@ All meshes and materials were created in Blender with Python and visual Blender 
 
 The 17 shared clips are `Idle`, `Walk`, `FastWalk`, `Turn`, `Talk`, `Listen`, `SitDown`, `SittingIdle`, `StandUp`, `HoldItem`, `GiveItem`, `ReceiveItem`, `Happy`, `Angry`, `Confused`, `Surprised`, and `Impatient`. They are **animation assets**, not NPC behavior. The coding assistant still needs to select and blend clips, place the guest, implement navigation and interactions, and check clipping with actual hotel furniture. The ticket-flick clip should be triggered by a guest interaction/event. Collision should be supplied by the game, not generated from the character mesh.
 
-## 02 Knickknack handoff
+## Earlier prototype: 02 Knickknack
 
 The editable file is `02_knickknack/02_knickknack.blend` and the exported game asset is `02_knickknack/02_knickknack.glb`. The folder also contains front, three-quarter, side, back, walk, sitting, special pen-reveal, neutral-gray, silhouette, and hotel-scale renders. Knickknack is a tiny, pear-shaped, nervous guest with a giant teal loot sack and a souvenir hotel pen. The sack and pen have dedicated rig bones; the special clip is `Knickknack_DisplayHotelPen`.
 
@@ -30,13 +30,13 @@ The exported GLB was re-imported and measured at **1.212 × 0.556 × 0.998 m**, 
 
 These characters and all their materials are original Blender geometry with **no external textures or third-party licenses**.
 
-## 03 Mrs Mute handoff
+## Earlier prototype: 03 Mrs Mute
 
 The editable file is `03_mrs_mute/03_mrs_mute.blend`; the Y-up export is `03_mrs_mute/03_mrs_mute.glb`. Her defining silhouette is a broad padded acoustic collar around a narrow plum figure. She holds a small cyan hotel bell and has an unimpressed expression. `MrsMute_RingAndIgnore` is her character clip. Front, three-quarter, side, back, walk, sitting, special-action, gray, black-silhouette, and hotel-scale previews are alongside the files.
 
 The GLB re-import measured **1.024 × 0.858 × 1.889 m**, floor contact **0.000 m**, **7,340 triangles**, **5 flat-color materials**, one skinned mesh, **21 bones**, and **18 clips**. It is **536,520 bytes**. The first walk export clipped the shoes by about 2 cm; the final export raises walk contact and passed the repeated floor sample. Her collar is close to a 1 m overall width, so integration should verify doorway and nearby NPC spacing. All geometry/materials are original and untextured; **third-party licenses: none**.
 
-## 04 Patchwork Pete handoff
+## Earlier prototype: 04 Patchwork Pete
 
 The editable file is `04_patchwork_pete/04_patchwork_pete.blend`; the Y-up export is `04_patchwork_pete/04_patchwork_pete.glb`. He has a broad, short silhouette, uneven proud face, and one huge orange stitched torso repair. A tiny needle is his optional secondary prop. `PatchworkPete_SlapPatch` animates an admiring slap and patch response. Front, three-quarter, side, back, walk, sitting, special-action, gray, black-silhouette, and hotel-scale previews are alongside the files.
 
@@ -46,4 +46,4 @@ The re-imported GLB measured **1.230 × 0.616 × 1.688 m**, floor contact **0.00
 
 In Blender 5.1, run `scripts/build_foundation.py`, then each `build_*.py` character script separately. Their corresponding `qa_*.py` scripts generate gray, silhouette, and hotel-scale previews without altering the deliverables. `scripts/validate_01_queuejack.py` and `scripts/validate_character.py -- <folder> <height>` re-import GLBs and check mesh, skin, action count, metric scale, floor origin, and sampled animation contact. The project’s basic Node tests also pass (9/9).
 
-Characters 01–04 have passed the current asset gate. Production should continue with Character 05 individually, using the shared artistic system but a new body, face, silhouette, and defining feature.
+Those earlier files passed structural GLB checks for the old direction, not the new stick-man visual gate. Production now restarts at Character 01 Queuejack under `STICKMAN_DESIGN_PLAN.md`. Its new Blender file should be visually inspected and tested before Character 02 begins.

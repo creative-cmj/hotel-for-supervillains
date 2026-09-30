@@ -1,4 +1,6 @@
-# Simple villain roster — design lock for production
+# Superseded cartoon-body plan (historical)
+
+> This plan and its production status were superseded by [STICKMAN_DESIGN_PLAN.md](STICKMAN_DESIGN_PLAN.md). The September 30 direction requires **actual 3D stick men**. Do not use this older plan or the first four cartoon-bodied models as the quality baseline.
 
 This plan uses the original 30 guest names and story hooks from the project's previous `SOURCE_ROSTER.md` (preserved on `backup/pre-stickfigure-roster`). It defines a **new** visual system; none of the deleted models is reused. Heights include the defining trait at rest, in metres. The playable manager is about 2.2 m tall. Faces use large eye shapes, two brows and one readable mouth. Three flat/matte colors per character are preferred; emissive material is reserved for Nightlight and tiny effect cues. All silhouettes must fit guest doors and the lift in their ordinary pose.
 
